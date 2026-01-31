@@ -1,0 +1,9 @@
+# File rác Python
+__pycache__/
+*.pyc
+
+# Cơ sở dữ liệu (Nên chặn để tránh xung đột khi code chung)
+db.sqlite3
+
+# File cấu hình môi trường (nếu có)
+.env
