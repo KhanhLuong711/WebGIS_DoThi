@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống Quản lý Đô thị Thông minh</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+    
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-dark: #1e40af;
+            --sidebar-width: 420px;
+            --bg-light: #f3f4f6;
+            --text-dark: #1f2937;
+        }
+
+        body, html { 
+            height: 100%; 
+            overflow: hidden; 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-light);
+        }
+
+        /* --- LAYOUT --- */
+        #wrapper { display: flex; height: 100vh; }
+        
+        /* SIDEBAR STYLING */
+        #sidebar { 
+            width: var(--sidebar-width); 
+            background: white; 
+            box-shadow: 4px 0 24px rgba(0,0,0,0.08); 
+            display: flex; 
+            flex-direction: column; 
+            z-index: 1000;
+            border-right: 1px solid #e5e7eb;
+        }
+
+        .sidebar-header { 
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); 
+            color: white; 
+            padding: 20px 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-header h4 { font-weight: 700; letter-spacing: 0.5px; font-size: 1.25rem; margin: 0; display: flex; align-items: center; gap: 10px; }
+
+        /* MODERN TABS (SEGMENTED CONTROL) */
+        .custom-tabs {
+            padding: 15px 20px 0 20px;
+            background: white;
+        }
+        .nav-pills {
+            background: #f3f4f6;
+            padding: 5px;
+            border-radius: 12px;
+            display: flex;
+        }
+        .nav-pills .nav-link {
+            border-radius: 8px;
+            color: #6b7280;
+            font-weight: 600;
+            font-size: 0.9rem;
+            flex: 1;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .nav-pills .nav-link.active {
+            background-color: white;
+            color: var(--primary-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .tab-content { 
+            padding: 20px; 
+            overflow-y: auto; 
+            flex-grow: 1; 
+            background: white;
+        }
+
+        /* CARDS & TOOLS */
+        .tool-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .tool-card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+            border-color: #d1d5db;
+        }
+        .tool-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: #6b7280;
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* CUSTOM BUTTONS */
+        .btn-custom-primary {
+            background: linear-gradient(to right, #2563eb, #3b82f6);
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 10px;
+        }
+        .btn-custom-primary:hover { background: linear-gradient(to right, #1d4ed8, #2563eb); color: white; }
+        
+        .btn-outline-custom {
+            border: 2px solid #e5e7eb;
+            color: #374151;
+            font-weight: 600;
+        }
+        .btn-outline-custom:hover { border-color: var(--primary-color); background: #eff6ff; color: var(--primary-color); }
+
+        /* ADMIN TABLE */
+        .table-container {
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .admin-table thead th {
+            background-color: #f9fafb;
+            color: #374151;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            padding: 12px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        .admin-table tbody td {
+            vertical-align: middle;
+            font-size: 0.9rem;
+            color: #4b5563;
+            padding: 12px;
+        }
+        .admin-table tbody tr:hover { background-color: #f9fafb; }
+
+        /* STATUS BADGES */
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .badge-moi { background-color: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
+        .badge-xl { background-color: #fef3c7; color: #d97706; border: 1px solid #fde68a; }
+        .badge-xong { background-color: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; }
+
+        /* MAP AREA */
+        #map-container { flex-grow: 1; position: relative; }
+        #map { height: 100%; width: 100%; z-index: 1; }
+
+        /* FLOATING REPORT BUTTON */
+        .btn-report-float {
+            position: absolute;
+            bottom: 30px; right: 30px;
+            z-index: 999;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            padding: 14px 28px;
+            border-radius: 50px;
+            font-weight: 700;
+            box-shadow: 0 10px 25px -5px rgba(220, 38, 38, 0.4);
+            border: none;
+            transition: transform 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: pulse-animation 2s infinite;
+        }
+        .btn-report-float:hover { transform: translateY(-3px); color: white; }
+        @keyframes pulse-animation {
+            0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+        }
+
+        /* POPUP STYLE */
+        .leaflet-popup-content-wrapper { border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
+        .leaflet-popup-content { margin: 15px; width: 260px !important;}
+        .popup-img { width: 100%; height: 140px; object-fit: cover; border-radius: 8px; margin-top: 8px; border: 1px solid #eee;}
+
+        /* FORM INPUTS */
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            padding: 10px 12px;
+            font-size: 0.9rem;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+<div id="wrapper">
+    <div id="sidebar">
+        <div class="sidebar-header">
+            <h4><i class="fa-solid fa-map-location-dot"></i> WebGIS Đô Thị</h4>
+            <small style="opacity: 0.8; font-weight: 300;">Hệ thống giám sát & phản ánh thông minh</small>
+        </div>
+        
+        <div class="custom-tabs">
+            <ul class="nav nav-pills" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-user">
+                        <i class="fa-solid fa-user me-2"></i>Người Dân
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-admin">
+                        <i class="fa-solid fa-user-shield me-2"></i>Quản Lý
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="tab-user">
+                <div class="tool-card text-center">
+                    <div class="tool-title justify-content-center">Tình hình xử lý</div>
+                    <div style="height: 180px; position: relative;">
+                        <canvas id="userPieChart"></canvas>
+                    </div>
+                    <p class="text-muted mt-2 small">Tổng số vụ việc: <b>{{ so_luong }}</b></p>
+                </div>
+                
+                <div class="tool-card">
+                    <div class="tool-title"><i class="fa-solid fa-compass"></i> Tiện ích tra cứu</div>
+                    
+                    <button class="btn btn-outline-custom w-100 mb-3" onclick="veCanTho()">
+                        <i class="fa-solid fa-location-dot text-danger"></i> Về khu vực Dự án (Cần Thơ)
+                    </button>
+
+                    <label class="small fw-bold mb-1 text-muted">Tìm kiếm phản ánh:</label>
+                    <div class="input-group">
+                        <input type="text" id="userSearch" class="form-control" placeholder="Nhập: Cống, Đèn, Rác..." onkeypress="checkEnter(event)">
+                        <button class="btn btn-primary" type="button" onclick="thucHienTimKiem()">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </button>
+                    </div>
+                    <div class="form-text small mt-1">Gõ từ khóa và nhấn Enter hoặc nút tìm kiếm.</div>
+                </div>
+
+                <div class="alert alert-primary d-flex align-items-center" role="alert" style="border-radius: 12px; font-size: 0.9rem;">
+                    <i class="fa-solid fa-circle-info me-3 fa-lg"></i>
+                    <div>
+                        Bấm nút <strong>"Gửi Phản Ánh"</strong> màu đỏ ở góc bản đồ để báo cáo sự cố kèm hình ảnh.
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="tab-admin">
+                <div class="tool-card">
+                    <div class="tool-title"><i class="fa-solid fa-filter"></i> Phân vùng Quận/Huyện</div>
+                    <form method="GET">
+                        <select name="quan_huyen" class="form-select" onchange="this.form.submit()">
+                            <option value="TatCa">-- Hiển thị tất cả khu vực --</option>
+                            <option value="NinhKieu" {% if filter_quan == 'NinhKieu' %}selected{% endif %}>📍 Quận Ninh Kiều</option>
+                            <option value="CaiRang" {% if filter_quan == 'CaiRang' %}selected{% endif %}>📍 Quận Cái Răng</option>
+                            <option value="BinhThuy" {% if filter_quan == 'BinhThuy' %}selected{% endif %}>📍 Quận Bình Thủy</option>
+                        </select>
+                    </form>
+                </div>
+
+                <div class="tool-card">
+                    <div class="tool-title"><i class="fa-solid fa-circle-nodes"></i> Quét Bán Kính</div>
+                    <form method="GET">
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <input type="text" name="center_lat" id="admLat" class="form-control" placeholder="Vĩ độ (Lat)" value="{{ radius_info.lat }}">
+                            </div>
+                            <div class="col-6">
+                                <input type="text" name="center_lng" id="admLng" class="form-control" placeholder="Kinh độ (Lng)" value="{{ radius_info.lng }}">
+                            </div>
+                        </div>
+                        <div class="input-group mb-3">
+                            <input type="number" name="radius" class="form-control" placeholder="Bán kính" value="{{ radius_info.r }}">
+                            <span class="input-group-text">km</span>
+                        </div>
+                        <button class="btn btn-custom-primary w-100 shadow-sm">
+                            <i class="fa-solid fa-radar"></i> Quét dữ liệu
+                        </button>
+                    </form>
+                </div>
+
+                <button class="btn btn-warning w-100 mb-4 fw-bold text-dark shadow-sm" style="border-radius: 8px; padding: 12px;" onclick="toggleHeatmap()">
+                    <i class="fa-solid fa-fire me-2"></i> Bật/Tắt Bản đồ nhiệt (Heatmap)
+                </button>
+
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="fw-bold m-0 text-dark">📋 Danh sách phản ánh ({{ so_luong }})</h6>
+                    <a href="/tao-du-lieu/" class="text-decoration-none small fw-bold">Reset Data</a>
+                </div>
+                
+                <div class="table-container">
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        <table class="table admin-table mb-0">
+                            <thead class="sticky-top">
+                                <tr>
+                                    <th>Tiêu đề</th>
+                                    <th width="100">Trạng thái</th>
+                                    <th width="50">Sửa</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminTableBody">
+                                {% for item in raw_data %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold text-dark">{{ item.tieu_de }}</div>
+                                        <div class="text-muted small"><i class="fa-regular fa-calendar me-1"></i>{{ item.ngay }}</div>
+                                    </td>
+                                    <td>
+                                        {% if item.trang_thai == 'Moi' %}
+                                            <span class="status-badge badge-moi">Mới</span>
+                                        {% elif item.trang_thai == 'DangXuLy' %}
+                                            <span class="status-badge badge-xl">Đang xử lý</span>
+                                        {% else %}
+                                            <span class="status-badge badge-xong">Hoàn thành</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-light border" onclick="openEditModal({{ item.id }}, '{{ item.trang_thai }}', '{{ item.ghi_chu }}')">
+                                            <i class="fa-solid fa-pen text-primary"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="map-container">
+        <div id="map"></div>
+        <button class="btn-report-float" onclick="batCheDoBaoCao()">
+            <i class="fa-solid fa-camera fa-lg"></i> Gửi Phản Ánh
+        </button>
+    </div>
+</div>
+
+<div class="modal fade" id="reportModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header bg-danger text-white" style="border-top-left-radius: 16px; border-top-right-radius: 16px;">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-triangle-exclamation me-2"></i> Gửi Phản Ánh Mới</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="formBaoCao">
+                    <div class="mb-3 p-3 bg-light rounded-3 border border-dashed">
+                        <label class="small text-muted fw-bold text-uppercase">Vị trí đã chọn:</label>
+                        <div id="lblToaDo" class="fw-bold text-danger fs-5">Chưa chọn</div>
+                        <input type="hidden" id="inputLat"><input type="hidden" id="inputLng">
+                    </div>
+                    <div class="mb-3">
+                        <label class="fw-bold mb-1">Tiêu đề phản ánh:</label>
+                        <input type="text" id="inputTieuDe" class="form-control" placeholder="Ví dụ: Nắp cống vỡ, Cây đổ..." required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="fw-bold mb-1">Hình ảnh hiện trường:</label>
+                        <input type="file" id="inputHinh" class="form-control" accept="image/*">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light fw-bold" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger fw-bold px-4" onclick="guiBaoCao()">Gửi ngay</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="adminModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header bg-primary text-white" style="border-top-left-radius: 16px; border-top-right-radius: 16px;">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-user-pen me-2"></i> Cập nhật Trạng thái</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <input type="hidden" id="editId">
+                <div class="mb-3">
+                    <label class="fw-bold mb-1">Trạng thái xử lý:</label>
+                    <select id="editStatus" class="form-select form-select-lg">
+                        <option value="Moi">🔴 Mới tiếp nhận</option>
+                        <option value="DangXuLy">🟠 Đang xử lý</option>
+                        <option value="DaXong">🟢 Đã hoàn thành</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold mb-1">Ghi chú của cán bộ:</label>
+                    <textarea id="editNote" class="form-control" rows="3" placeholder="Nhập ghi chú xử lý..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light fw-bold" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary fw-bold px-4" onclick="luuTrangThai()">Lưu thay đổi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+<script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // 1. SETUP MAP
+    var map = L.map('map', {zoomControl: false}).setView([10.045, 105.746], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: 'WebGIS Pro' }).addTo(map);
+    L.control.zoom({position: 'topright'}).addTo(map);
+
+    var dataList = {{ danh_sach_diem|safe }};
+    var markers = L.markerClusterGroup();
+    var heatLayer = null;
+
+    // Helper functions
+    function getColor(status) { return status === 'Moi' ? '#dc3545' : (status === 'DangXuLy' ? '#f59e0b' : '#10b981'); }
+    function getText(status) { return status === 'Moi' ? 'Mới' : (status === 'DangXuLy' ? 'Đang xử lý' : 'Đã xong'); }
+    function getBadgeClass(status) { return status === 'Moi' ? 'badge-moi' : (status === 'DangXuLy' ? 'badge-xl' : 'badge-xong'); }
+
+    // RENDER MARKERS FUNCTION (để tái sử dụng khi tìm kiếm)
+    function renderMarkers(list) {
+        markers.clearLayers();
+        list.forEach(d => {
+            var icon = L.divIcon({
+                className: 'custom-icon',
+                html: `<div style="background:${getColor(d.trang_thai)}; width:24px; height:24px; border-radius:50%; border:3px solid white; box-shadow:0 3px 6px rgba(0,0,0,0.3);"></div>`,
+                iconSize: [24, 24], iconAnchor: [12, 12]
+            });
+
+            var popupContent = `
+                <div style="font-family: 'Inter', sans-serif;">
+                    <h6 style="font-weight:700; color:#1f2937; margin-bottom:5px;">${d.tieu_de}</h6>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <span class="status-badge ${getBadgeClass(d.trang_thai)}">${getText(d.trang_thai)}</span>
+                        <small style="color:#6b7280;">${d.ngay.split(' ')[0]}</small>
+                    </div>
+                    <div style="font-size:12px; color:#4b5563; margin-bottom:8px;">
+                        <i class="fa-solid fa-location-dot me-1 text-primary"></i> ${d.quan}
+                    </div>
+                    ${d.hinh_anh ? `<img src="${d.hinh_anh}" class="popup-img">` : ''}
+                    ${d.ghi_chu ? `<div style="background:#f3f4f6; padding:8px; border-radius:6px; margin-top:8px; font-size:12px;">👮 <b>Admin:</b> ${d.ghi_chu}</div>` : ''}
+                    <hr style="margin:10px 0; border-color:#e5e7eb;">
+                    <a href="https://www.google.com/maps/dir/?api=1&destination=${d.lat},${d.lng}" target="_blank" class="btn btn-sm btn-outline-primary w-100 fw-bold" style="border-radius:6px;">
+                        <i class="fa-solid fa-diamond-turn-right me-1"></i> Chỉ đường
+                    </a>
+                </div>
+            `;
+            markers.addLayer(L.marker([d.lat, d.lng], {icon: icon}).bindPopup(popupContent));
+        });
+        map.addLayer(markers);
+    }
+
+    // Initial Render
+    renderMarkers(dataList);
+
+    // 3. VẼ VÒNG TRÒN BÁN KÍNH
+    {% if radius_info %}
+    L.circle([{{ radius_info.lat }}, {{ radius_info.lng }}], {
+        color: '#2563eb', fillColor: '#3b82f6', fillOpacity: 0.15, radius: {{ radius_info.r }} * 1000, weight: 2
+    }).addTo(map);
+    L.marker([{{ radius_info.lat }}, {{ radius_info.lng }}]).addTo(map).bindPopup("<b>Tâm quét bán kính</b>").openPopup();
+    {% endif %}
+
+    // 4. CHART USER
+    var stats = {{ stats|safe }};
+    new Chart(document.getElementById('userPieChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Mới', 'Đang xử lý', 'Hoàn thành'],
+            datasets: [{ 
+                data: [stats.moi, stats.dang_xu_ly, stats.da_xong], 
+                backgroundColor: ['#ef4444', '#f59e0b', '#10b981'],
+                borderWidth: 0,
+                hoverOffset: 4
+            }]
+        },
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false,
+            plugins: { 
+                legend: { position: 'right', labels: { usePointStyle: true, font: {family: "'Inter', sans-serif"} } } 
+            },
+            cutout: '65%'
+        }
+    });
+
+    // 5. FUNCTIONS
+    function batCheDoBaoCao() {
+        alert("📍 Hãy click chuột vào vị trí sự cố trên bản đồ!");
+        map.getContainer().style.cursor = 'crosshair';
+        map.once('click', function(e) {
+            document.getElementById('inputLat').value = e.latlng.lat;
+            document.getElementById('inputLng').value = e.latlng.lng;
+            document.getElementById('lblToaDo').innerText = e.latlng.lat.toFixed(5) + ", " + e.latlng.lng.toFixed(5);
+            new bootstrap.Modal(document.getElementById('reportModal')).show();
+            map.getContainer().style.cursor = '';
+        });
+    }
+
+    function guiBaoCao() {
+        var formData = new FormData();
+        formData.append('tieu_de', document.getElementById('inputTieuDe').value);
+        formData.append('lat', document.getElementById('inputLat').value);
+        formData.append('lng', document.getElementById('inputLng').value);
+        formData.append('hinh_anh', document.getElementById('inputHinh').files[0]);
+
+        fetch('/gui-phan-anh/', { method: 'POST', body: formData })
+        .then(r => r.json()).then(d => {
+            if(d.status === 'success') { alert("✅ Gửi thành công!"); location.reload(); }
+            else alert("❌ Lỗi gửi dữ liệu!");
+        });
+    }
+
+    function toggleHeatmap() {
+        if (heatLayer) { map.removeLayer(heatLayer); heatLayer = null; map.addLayer(markers); }
+        else {
+            map.removeLayer(markers);
+            var heatData = dataList.map(p => [p.lat, p.lng, 1]);
+            heatLayer = L.heatLayer(heatData, {radius: 30, blur: 20}).addTo(map);
+        }
+    }
+
+    function veCanTho() {
+        map.flyTo([10.035, 105.775], 14, {duration: 1.5}); 
+    }
+
+    // --- SEARCH FUNCTION MỚI ---
+    function thucHienTimKiem() {
+        var keyword = document.getElementById('userSearch').value.toLowerCase();
+        
+        // 1. Lọc trên bản đồ
+        var filteredData = dataList.filter(d => d.tieu_de.toLowerCase().includes(keyword));
+        renderMarkers(filteredData);
+
+        // 2. Nếu tìm thấy thì zoom vào (nếu có dữ liệu)
+        if(filteredData.length > 0) {
+            var group = new L.featureGroup(filteredData.map(d => L.marker([d.lat, d.lng])));
+            map.fitBounds(group.getBounds().pad(0.1));
+        } else {
+            alert("Không tìm thấy kết quả nào!");
+            renderMarkers(dataList); // Reset về ban đầu
+        }
+    }
+
+    function checkEnter(event) {
+        if (event.key === "Enter") {
+            thucHienTimKiem();
+        }
+    }
+
+    // ADMIN: Click map để điền tọa độ tool
+    map.on('click', function(e) {
+        if(document.getElementById('tab-admin').classList.contains('active')) {
+            var latInput = document.getElementById('admLat');
+            var lngInput = document.getElementById('admLng');
+            if(latInput && lngInput) {
+                latInput.value = e.latlng.lat.toFixed(5);
+                lngInput.value = e.latlng.lng.toFixed(5);
+            }
+        }
+    });
+
+    function openEditModal(id, status, note) {
+        document.getElementById('editId').value = id;
+        document.getElementById('editStatus').value = status;
+        document.getElementById('editNote').value = (note && note !== 'None') ? note : '';
+        new bootstrap.Modal(document.getElementById('adminModal')).show();
+    }
+
+    function luuTrangThai() {
+        var fd = new FormData();
+        fd.append('id', document.getElementById('editId').value);
+        fd.append('trang_thai', document.getElementById('editStatus').value);
+        fd.append('ghi_chu', document.getElementById('editNote').value);
+        
+        fetch('/cap-nhat/', { method: 'POST', body: fd })
+        .then(r => r.json()).then(d => { location.reload(); });
+    }
+</script>
+
+</body>
+</html>

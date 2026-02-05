@@ -1,22 +1,32 @@
 from django.db import models
+from django.utils import timezone
 
 class DiemPhanAnh(models.Model):
-    # Các lựa chọn cho trạng thái xử lý
-    TRANG_THAI_CHOICES = [
-        ('Moi', 'Mới tiếp nhận'),
-        ('DangXuLy', 'Đang xử lý'),
-        ('DaXong', 'Đã xử lý xong'),
+    QUAN_HUYEN_CHOICES = [
+        ('NinhKieu', 'Quận Ninh Kiều'),
+        ('CaiRang', 'Quận Cái Răng'),
+        ('BinhThuy', 'Quận Bình Thủy'),
+        ('OMon', 'Quận Ô Môn'),
+        ('ThotNot', 'Quận Thốt Nốt'),
+        ('PhongDien', 'Huyện Phong Điền'),
+        ('CoDo', 'Huyện Cờ Đỏ'),
+        ('VinhThanh', 'Huyện Vĩnh Thạnh'),
+        ('ThoiLai', 'Huyện Thới Lai'),
     ]
 
-    # Định nghĩa các cột dữ liệu
     tieu_de = models.CharField(max_length=200, verbose_name="Tiêu đề")
-    vi_do = models.FloatField(verbose_name="Vĩ độ (Lat)")  
-    kinh_do = models.FloatField(verbose_name="Kinh độ (Lon)") 
-    noi_dung = models.TextField(verbose_name="Nội dung phản ánh")
-    trang_thai = models.CharField(max_length=20, choices=TRANG_THAI_CHOICES, default='Moi')
+    quan_huyen = models.CharField(max_length=50, choices=QUAN_HUYEN_CHOICES, default='NinhKieu')
     
-    # Cột thời gian tự động lấy lúc tạo
-    ngay_tao = models.DateTimeField(auto_now_add=True)
+    vi_do = models.FloatField()
+    kinh_do = models.FloatField()
+    
+    trang_thai = models.CharField(max_length=50, default='Moi')
+    ngay_bao_cao = models.DateTimeField(default=timezone.now)
+    
+    # --- MỚI THÊM ---
+    hinh_anh = models.ImageField(upload_to='anh_hien_truong/', blank=True, null=True, verbose_name="Ảnh hiện trường")
+    ghi_chu = models.TextField(blank=True, null=True, verbose_name="Ghi chú xử lý")
+    ngay_cap_nhat = models.DateTimeField(auto_now=True, verbose_name="Ngày cập nhật cuối")
 
     def __str__(self):
         return self.tieu_de
