@@ -1,0 +1,448 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký | WebGIS phản ánh đô thị</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/ui-system.css' %}">
+
+    <style>
+        .register-note {
+            padding: 14px 16px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #eff6ff 0%, #f8fbff 100%);
+            border: 1px solid #dbeafe;
+            color: #1e3a8a;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .brand-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.14);
+            border: 1px solid rgba(255,255,255,0.18);
+            font-size: 0.88rem;
+            font-weight: 700;
+            margin-bottom: 22px;
+        }
+
+        .auth-footer-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px 18px;
+            margin-top: 20px;
+            font-size: 0.95rem;
+        }
+
+        .auth-footer-links a {
+            color: var(--primary-strong);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .auth-footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .message-stack .alert {
+            border-radius: 14px;
+            border: none;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 10px;
+        }
+
+        .input-icon {
+            position: relative;
+        }
+
+        .input-icon svg {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 18px;
+            height: 18px;
+            color: #64748b;
+            pointer-events: none;
+        }
+
+        .input-icon .form-control {
+            padding-left: 46px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .register-actions {
+            display: grid;
+            gap: 12px;
+        }
+
+        .soft-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin: 20px 0 16px;
+        }
+
+        .soft-divider::before,
+        .soft-divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: #e2e8f0;
+        }
+
+        .password-hint {
+            font-size: 0.86rem;
+            color: #64748b;
+            margin-top: 8px;
+        }
+
+        @media (max-width: 767.98px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+        }
+    </style>
+    <style>
+    .brand-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.14);
+        border: 1px solid rgba(255,255,255,0.18);
+        font-size: 0.88rem;
+        font-weight: 700;
+        margin-bottom: 22px;
+    }
+
+    .register-note {
+        padding: 14px 16px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #eff6ff 0%, #f8fbff 100%);
+        border: 1px solid #dbeafe;
+        color: #1e3a8a;
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    .auth-footer-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 18px;
+        margin-top: 20px;
+        font-size: 0.95rem;
+    }
+
+    .auth-footer-links a {
+        color: var(--primary-strong);
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .auth-footer-links a:hover {
+        text-decoration: underline;
+    }
+
+    .message-stack .alert {
+        border-radius: 14px;
+        border: none;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 10px;
+    }
+
+    .input-icon {
+        position: relative;
+    }
+
+    .input-icon svg {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 18px;
+        height: 18px;
+        color: #64748b;
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    .input-icon .form-control {
+        padding-left: 46px;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    .register-actions {
+        display: grid;
+        gap: 12px;
+    }
+
+    .soft-divider {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #94a3b8;
+        font-size: 0.9rem;
+        margin: 20px 0 16px;
+    }
+
+    .soft-divider::before,
+    .soft-divider::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: #e2e8f0;
+    }
+
+    .password-hint {
+        font-size: 0.86rem;
+        color: #64748b;
+        margin-top: 8px;
+    }
+
+    .input-group.password-group {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: stretch;
+        width: 100%;
+    }
+
+    .input-group.password-group .input-icon {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .input-group.password-group .form-control {
+        width: 100%;
+        border-radius: 14px 0 0 14px !important;
+    }
+
+    .input-group.password-group .btn {
+        flex: 0 0 auto;
+        min-width: 78px;
+        border-radius: 0 14px 14px 0 !important;
+        white-space: nowrap;
+        margin-left: -1px;
+    }
+
+    @media (max-width: 767.98px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+            gap: 0;
+        }
+    }
+</style>
+</head>
+<body class="ui-body">
+    <div class="ui-auth-page">
+        <div class="ui-auth-shell ui-fade-up">
+            <div class="ui-auth-visual">
+                <div class="brand-pill ui-fade-up delay-1">
+                    <span>WebGIS</span>
+                    <span>•</span>
+                    <span>Tạo tài khoản mới</span>
+                </div>
+
+                <div class="ui-fade-up delay-2">
+                    <h1>Bắt đầu sử dụng hệ thống</h1>
+                    <p>
+                        Tạo tài khoản để gửi phản ánh, bình luận trực tiếp tại từng sự cố,
+                        theo dõi tiến độ xử lý và quản lý toàn bộ thông tin cá nhân trên nền tảng WebGIS.
+                    </p>
+                </div>
+
+                <div class="ui-auth-list">
+                    <div class="ui-auth-item ui-fade-up delay-2">
+                        <div class="ui-auth-icon">🧭</div>
+                        <div>
+                            <div class="fw-bold">Quản lý phản ánh rõ ràng</div>
+                            <div class="small opacity-75">Theo dõi trạng thái từ lúc gửi đến khi hoàn tất xử lý.</div>
+                        </div>
+                    </div>
+
+                    <div class="ui-auth-item ui-fade-up delay-3">
+                        <div class="ui-auth-icon">📷</div>
+                        <div>
+                            <div class="fw-bold">Bổ sung ảnh và bình luận</div>
+                            <div class="small opacity-75">Cung cấp thêm minh chứng để phản ánh có độ tin cậy cao hơn.</div>
+                        </div>
+                    </div>
+
+                    <div class="ui-auth-item ui-fade-up delay-4">
+                        <div class="ui-auth-icon">🔔</div>
+                        <div>
+                            <div class="fw-bold">Theo dõi tiến độ xử lý</div>
+                            <div class="small opacity-75">Nhận biết phản ánh nào đang tiếp nhận, đang xử lý hay đã hoàn tất.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ui-auth-form-wrap">
+                <div class="ui-auth-card ui-fade-up delay-2">
+                    <div class="ui-auth-title">Tạo tài khoản</div>
+                    <div class="ui-auth-subtitle">
+                        Điền đầy đủ thông tin để bắt đầu sử dụng hệ thống.
+                    </div>
+
+                    {% if messages %}
+                        <div class="message-stack">
+                            {% for message in messages %}
+                                <div class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-danger{% else %}alert-warning{% endif %}">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div class="register-note mb-4">
+                        Tài khoản mới sẽ giúp em gửi phản ánh hợp lệ, lưu lịch sử hoạt động và theo dõi các sự cố quan tâm một cách tập trung.
+                    </div>
+
+                    <form method="POST" action="" novalidate>
+                        {% csrf_token %}
+
+                        <div class="form-grid">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Tên đăng nhập</label>
+                                <div class="input-icon">
+                                    <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6.75a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.118a7.5 7.5 0 1115 0A17.933 17.933 0 0112 21.75a17.933 17.933 0 01-7.5-1.632z"/>
+                                    </svg>
+                                    <input
+                                        type="text"
+                                        name="username"
+                                        class="form-control"
+                                        placeholder="Nhập tên đăng nhập"
+                                        required
+                                    >
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Email</label>
+                                <div class="input-icon">
+                                    <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5H4.5A2.25 2.25 0 002.25 6.75m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.909A2.25 2.25 0 012.25 6.993V6.75"/>
+                                    </svg>
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        class="form-control"
+                                        placeholder="Nhập email"
+                                        required
+                                    >
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Mật khẩu</label>
+                                <div class="input-group password-group">
+                                    <div class="input-icon flex-grow-1">
+                                        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 0h10.5A2.25 2.25 0 0119.5 12.75v6A2.25 2.25 0 0117.25 21h-10.5A2.25 2.25 0 014.5 18.75v-6A2.25 2.25 0 016.75 10.5z"/>
+                                        </svg>
+                                        <input
+                                            type="password"
+                                            name="password"
+                                            id="passwordField"
+                                            class="form-control"
+                                            placeholder="Nhập mật khẩu"
+                                            required
+                                        >
+                                    </div>
+                                    <button type="button" class="btn btn-outline-secondary" id="togglePassword">
+                                        Hiện
+                                    </button>
+                                </div>
+                                <div class="password-hint">Mật khẩu nên có ít nhất 6 ký tự.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Xác nhận mật khẩu</label>
+                                <div class="input-group password-group">
+                                    <div class="input-icon flex-grow-1">
+                                        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 0h10.5A2.25 2.25 0 0119.5 12.75v6A2.25 2.25 0 0117.25 21h-10.5A2.25 2.25 0 014.5 18.75v-6A2.25 2.25 0 016.75 10.5z"/>
+                                        </svg>
+                                        <input
+                                            type="password"
+                                            name="confirm"
+                                            id="confirmPasswordField"
+                                            class="form-control"
+                                            placeholder="Nhập lại mật khẩu"
+                                            required
+                                        >
+                                    </div>
+                                    <button type="button" class="btn btn-outline-secondary" id="toggleConfirmPassword">
+                                        Hiện
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="register-actions mt-4">
+                            <button type="submit" class="btn ui-btn-primary btn-lg ui-glow-hover">
+                                Tạo tài khoản
+                            </button>
+
+                            <a href="/ban-do/" class="btn ui-btn-dark-soft btn-lg">
+                                Về trang bản đồ
+                            </a>
+                        </div>
+
+                        <div class="soft-divider">Đã có tài khoản?</div>
+
+                        <div class="auth-footer-links">
+                            <a href="{% url 'login' %}">Đăng nhập ngay</a>
+                            <a href="{% url 'password_reset' %}">Quên mật khẩu</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function bindTogglePassword(buttonId, inputId) {
+            const button = document.getElementById(buttonId);
+            const input = document.getElementById(inputId);
+
+            if (button && input) {
+                button.addEventListener('click', function () {
+                    const isPassword = input.getAttribute('type') === 'password';
+                    input.setAttribute('type', isPassword ? 'text' : 'password');
+                    button.textContent = isPassword ? 'Ẩn' : 'Hiện';
+                });
+            }
+        }
+
+        bindTogglePassword('togglePassword', 'passwordField');
+        bindTogglePassword('toggleConfirmPassword', 'confirmPasswordField');
+    </script>
+</body>
+</html>

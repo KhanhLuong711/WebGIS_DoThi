@@ -1,0 +1,134 @@
+{% extends "admin_panel/base_admin.html" %}
+{% block content %}
+
+<div class="ui-section-title">Quản lý bình luận</div>
+
+<!-- FILTER BAR -->
+<div class="ui-panel p-3 mb-3">
+    <form method="GET" class="row g-2 align-items-center">
+
+        <!-- SEARCH -->
+        <div class="col-md-5">
+            <div class="ui-search-box">
+                <i class="fa fa-search"></i>
+                <input type="text" name="q"
+                       placeholder="Tìm nội dung..."
+                       value="{{ request.GET.q }}">
+            </div>
+        </div>
+
+        <!-- STATUS -->
+        <div class="col-md-3">
+            <div class="ui-select-wrapper">
+                <select name="status">
+                    <option value="">Tất cả</option>
+                    <option value="visible" {% if status == "visible" %}selected{% endif %}>Hiển thị</option>
+                    <option value="hidden" {% if status == "hidden" %}selected{% endif %}>Đã ẩn</option>
+                </select>
+                <i class="fa fa-chevron-down"></i>
+            </div>
+        </div>
+
+        <!-- BUTTON -->
+        <div class="col-md-2">
+            <button class="ui-btn-filter w-100">
+                Lọc
+            </button>
+        </div>
+
+    </form>
+</div>
+
+<!-- TABLE -->
+<div class="ui-panel p-3">
+
+    <div class="table-responsive">
+        <table class="table align-middle">
+
+            <thead>
+                <tr class="text-muted">
+                    <th>#</th>
+                    <th>Nội dung</th>
+                    <th>User</th>
+                    <th>Phản ánh</th>
+                    <th>Trạng thái</th>
+                    <th>Ngày</th>
+                    <th></th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for c in comments %}
+                <tr class="ui-item-card">
+
+                    <td><strong>#{{ c.id }}</strong></td>
+
+                    <td>
+                        {{ c.noi_dung|truncatechars:50 }}
+                    </td>
+
+                    <td>
+                        {{ c.nguoi_dung.username }}
+                    </td>
+
+                    <td>
+                        #{{ c.diem_phan_anh.id }}
+                    </td>
+
+                    <td>
+                        <span class="ui-chip
+                            {% if c.is_hidden %}
+                                ui-status-ChoDuyet
+                            {% else %}
+                                ui-status-DaXuLy
+                            {% endif %}
+                        ">
+                            {% if c.is_hidden %}Ẩn{% else %}Hiển thị{% endif %}
+                        </span>
+                    </td>
+
+                    <td class="ui-muted">
+                        {{ c.ngay_tao|date:"d/m/Y" }}
+                    </td>
+
+                    <td>
+                        <div class="ui-action-group">
+
+                            <!-- TOGGLE -->
+                            <form method="POST" action="{% url 'toggle_comment' c.id %}">
+                                {% csrf_token %}
+                                <button class="ui-btn-action warning">
+                                    {% if c.is_hidden %}Hiện{% else %}Ẩn{% endif %}
+                                </button>
+                            </form>
+
+                            <!-- DELETE -->
+                            <form method="POST" action="{% url 'delete_comment' c.id %}">
+                                {% csrf_token %}
+                                <button class="ui-btn-action danger"
+                                        onclick="return confirm('Xóa bình luận này?')">
+                                    Xóa
+                                </button>
+                            </form>
+
+                        </div>
+                    </td>
+
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7">
+                        <div class="ui-empty">
+                            Không có bình luận
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+    </div>
+
+</div>
+
+{% endblock %}

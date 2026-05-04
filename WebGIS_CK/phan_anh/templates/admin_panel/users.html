@@ -1,0 +1,144 @@
+{% extends "admin_panel/base_admin.html" %}
+{% block content %}
+
+<div class="ui-section-title">Quản lý người dùng</div>
+
+<!-- FILTER BAR -->
+<div class="ui-panel p-3 mb-3">
+    <form method="GET" class="row g-2 align-items-center">
+
+        <!-- SEARCH -->
+        <div class="col-md-5">
+            <div class="ui-search-box">
+                <i class="fa fa-search"></i>
+                <input type="text" name="q"
+                       placeholder="Tìm username..."
+                       value="{{ request.GET.q }}">
+            </div>
+        </div>
+
+        <!-- ROLE -->
+        <div class="col-md-3">
+            <div class="ui-select-wrapper">
+                <select name="role">
+                    <option value="">Tất cả</option>
+                    <option value="admin">Admin</option>
+                    <option value="user">User thường</option>
+                </select>
+                <i class="fa fa-chevron-down"></i>
+            </div>
+        </div>
+
+        <!-- BUTTON -->
+        <div class="col-md-2">
+            <button class="ui-btn-filter w-100">
+                Lọc
+            </button>
+        </div>
+
+    </form>
+</div>
+
+<!-- TABLE -->
+<div class="ui-panel p-3">
+
+    <div class="table-responsive">
+        <table class="table align-middle">
+
+            <thead>
+                <tr class="text-muted">
+                    <th>#</th>
+                    <th>Người dùng</th>
+                    <th>Email</th>
+                    <th>Trạng thái</th>
+                    <th>Quyền</th>
+                    <th></th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for u in users %}
+                <tr class="ui-item-card">
+
+                    <!-- ID -->
+                    <td><strong>#{{ u.id }}</strong></td>
+
+                    <!-- USER -->
+                    <td>
+                        <div class="fw-bold">{{ u.username }}</div>
+                        <div class="ui-muted small">ID: {{ u.id }}</div>
+                    </td>
+
+                    <!-- EMAIL -->
+                    <td class="ui-muted">
+                        {{ u.email }}
+                    </td>
+
+                    <!-- STATUS -->
+                    <td>
+                        {% if u.is_active %}
+                            <span class="ui-chip ui-status-DaXuLy">Hoạt động</span>
+                        {% else %}
+                            <span class="ui-chip ui-status-ChoDuyet">Bị khóa</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- ROLE -->
+                    <td>
+                        {% if u.is_superuser %}
+                            <span class="ui-chip ui-status-DangXuLy">Admin</span>
+                        {% else %}
+                            <span class="ui-chip">User</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- ACTION -->
+                    <td>
+                        <div class="ui-action-group">
+
+                            <!-- KHÓA / MỞ -->
+                            <form method="POST" action="{% url 'toggle_user' u.id %}">
+                                {% csrf_token %}
+                                <button class="ui-btn-action warning">
+                                    <i class="fa fa-lock"></i>
+                                </button>
+                            </form>
+
+                            <!-- ADMIN -->
+                            <form method="POST" action="{% url 'toggle_admin' u.id %}">
+                                {% csrf_token %}
+                                <button class="ui-btn-action view">
+                                    <i class="fa fa-user-shield"></i>
+                                </button>
+                            </form>
+
+                            <!-- DELETE -->
+                            <form method="POST" action="{% url 'delete_user' u.id %}">
+                                {% csrf_token %}
+                                <button class="ui-btn-action danger"
+                                        onclick="return confirm('Xóa user này?')">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </form>
+
+                        </div>
+                    </td>
+
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6">
+                        <div class="ui-empty">
+                            Không có người dùng
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+    </div>
+
+</div>
+
+{% endblock %}

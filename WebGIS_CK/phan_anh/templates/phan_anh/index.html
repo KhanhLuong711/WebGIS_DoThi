@@ -1,0 +1,932 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống Quản lý Đô thị</title>
+    <meta name="referrer" content="origin-when-cross-origin">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-sidebar-v2/css/leaflet-sidebar.min.css" />
+
+    <style>
+        :root { --primary-color: #2563eb; --sidebar-width: 480px; --bg-light: #f3f4f6; }
+        body, html { height: 100%; overflow: hidden; font-family: 'Inter', sans-serif; background-color: var(--bg-light); }
+        #wrapper { display: flex; height: 100vh; }
+        #sidebar { width: var(--sidebar-width); background: white; box-shadow: 4px 0 24px rgba(0,0,0,0.08); display: flex; flex-direction: column; z-index: 1000; overflow-y: auto;}
+        .sidebar-header { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; padding: 20px 24px; }
+        .custom-tabs { padding: 15px 20px 0 20px; background: white; }
+        .nav-pills { background: #f3f4f6; padding: 5px; border-radius: 12px; display: flex; }
+        .nav-pills .nav-link { border-radius: 8px; color: #6b7280; font-weight: 600; font-size: 0.9rem; flex: 1; text-align: center; border: none; }
+        .nav-pills .nav-link.active { background-color: white; color: var(--primary-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .tab-content { padding: 20px; flex-grow: 1; background: white; }
+        .tool-card { background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+        .tool-title { font-size: 0.85rem; text-transform: uppercase; color: #6b7280; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .table-container { border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; }
+        .admin-table thead th { background-color: #f9fafb; color: #374151; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; padding: 12px; border-bottom: 2px solid #e5e7eb; }
+        .admin-table tbody td { vertical-align: middle; font-size: 0.9rem; color: #4b5563; padding: 12px; border-bottom: 1px solid #f3f4f6; }
+        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+        .badge-moi { background-color: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
+        .badge-xl { background-color: #fef3c7; color: #d97706; border: 1px solid #fde68a; }
+        .badge-xong { background-color: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; }
+        .badge-choduyet { background-color: #e5e7eb; color: #4b5563; border: 1px solid #d1d5db; }
+        #map-container { flex-grow: 1; position: relative; }
+        #map { height: 100%; width: 100%; z-index: 1; }
+        .btn-report-float { position: absolute; bottom: 30px; right: 30px; z-index: 999; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 14px 28px; border-radius: 50px; font-weight: 700; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.2s;}
+        .btn-report-float:hover { transform: scale(1.05); color: white;}
+        .image-gallery::-webkit-scrollbar { height: 6px; }
+        .image-gallery::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .cmt-box { max-height: 120px; overflow-y: auto; background: #f9fafb; padding: 8px; border-radius: 8px; font-size: 12px; border: 1px solid #e5e7eb; margin-top: 8px;}
+        .stat-box { padding: 10px; border-radius: 8px; text-align: center; color: white; }
+        .stat-box .num { font-size: 1.5rem; font-weight: 700; line-height: 1; margin-bottom: 5px; }
+        .stat-box .lbl { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+        .leaflet-routing-container { display: none !important; opacity: 0 !important; pointer-events: none !important; width: 0 !important; height: 0 !important;}
+        .interaction-btn { font-size: 12px; padding: 4px 10px; border-radius: 20px; border: 1px solid #e5e7eb; background: white; cursor: pointer; transition: 0.2s; font-weight: bold; color: #4b5563;}
+        .interaction-btn:hover { background: #f3f4f6; }
+        .btn-theodoi.active { color: #2563eb; border-color: #bfdbfe; background: #eff6ff; }
+        /* Cho phép animate mượt */
+        #sidebar {
+            transition: width 0.3s ease;
+        }
+
+        /* Trạng thái thu gọn */
+        #sidebar.collapsed {
+            width: 0 !important;
+            min-width: 0 !important;
+            overflow: hidden;
+        }
+
+        /* Map chiếm toàn bộ khi sidebar đóng */
+        #sidebar.collapsed + #map-container {
+            width: 100%;
+        }
+
+        /* Nút toggle */
+        #toggle-btn {
+            position: absolute;
+            top: 15px;
+            left: 30px;                 /* bám vào map-container */
+            transform: translateX(-30%); /* đẩy ra đúng mép sidebar */
+            z-index: 2000;
+            background: white;
+            border: none;
+            padding: 10px 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+            cursor: pointer;
+            transition: left 0.3s ease, transform 0.3s ease;
+        }
+
+        /* Khi sidebar đóng */
+        #sidebar.collapsed + #map-container #toggle-btn {
+            left: 25px;
+        }
+    </style>
+</head>
+<body>
+<div style="display:none;">{% csrf_token %}</div>
+
+<div id="wrapper">
+    <div id="sidebar">
+        <div class="sidebar-header">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:14px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <img src="{% static 'images/logo.png' %}" 
+                        alt="Logo" 
+                        style="height:50px; width:auto; object-fit:contain;">
+
+                    <div style="line-height:1.2;">
+                        <div style="font-weight:700; font-size:1rem; color:white;">
+                            UIRC
+                        </div>
+                        <div style="font-size:0.75rem; color:rgba(255,255,255,0.7);">
+                            Urban Issue Reporting Center
+                        </div>
+                    </div>
+                </div>
+                <div style="text-align:right; min-width:170px;">
+                    <a href="{% url 'trang_chu' %}" class="btn btn-light btn-sm fw-bold text-primary w-100 mb-2" style="border-radius: 6px; font-size: 0.78rem;">
+                        <i class="fa-solid fa-house me-1"></i> Về trang chủ
+                    </a>
+                    {% if is_logged_in %}
+                        <div style="
+                            display:flex;
+                            align-items:center;
+                            justify-content:center;
+                            gap:6px;
+                            white-space:nowrap;
+                            background: rgba(255,255,255,0.2);
+                            padding: 6px 10px;
+                            border-radius: 14px;
+                            font-size: 0.8rem;
+                            color: white;
+                            margin-bottom: 6px;
+                        ">
+                            {% if is_admin %}
+                                <i class="fa-solid fa-user-shield"></i> Admin -
+                            {% else %}
+                                <i class="fa-solid fa-user"></i> User -
+                            {% endif %}
+                            <b>{{ username }}</b>
+                        </div>
+                        <div style="
+                            display:flex;
+                            align-items:center;
+                            justify-content:space-between;
+                            background: rgba(255,255,255,0.2);
+                            border-radius: 14px;
+                            overflow:hidden;
+                            font-size: 0.78rem;
+                        ">
+
+                            <!-- HỒ SƠ -->
+                            <a href="{% url 'ho_so' %}" style="
+                                flex:1;
+                                text-align:center;
+                                padding:6px 8px;
+                                background:white;
+                                color:#2563eb;
+                                text-decoration:none;
+                                font-weight:700;
+                            ">
+                                Hồ sơ
+                            </a>
+
+                            <!-- divider -->
+                            <div style="
+                                width:1px;
+                                background: rgba(0,0,0,0.08);
+                                height:60%;
+                            "></div>
+
+                            <!-- ĐĂNG XUẤT -->
+                            <a href="{% url 'logout' %}" 
+                            style="
+                                flex:1;
+                                text-align:center;
+                                padding:6px 8px;
+                                color:white;
+                                text-decoration:none;
+                                font-weight:600;
+                                transition:0.2s;
+                            "
+                            onmouseover="this.style.background='rgba(255,80,80,0.2)'; this.style.color='#fff';"
+                            onmouseout="this.style.background='transparent'; this.style.color='white';"
+                            >
+                                Đăng xuất
+                            </a>
+
+                        </div>
+                    {% else %}
+                        <div style="background: rgba(255,255,255,0.16); padding: 8px 10px; border-radius: 14px; font-size: 0.78rem; color: white; line-height:1.5;">
+                            Chế độ xem bản đồ công khai.<br><b>Đăng nhập được thực hiện ở trang chủ.</b>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="custom-tabs">
+            <ul class="nav nav-pills" role="tablist">
+                {% if is_admin %}
+                <li class="nav-item" role="presentation" style="width: 100%;">
+                    <button class="nav-link active w-100" data-bs-toggle="pill" data-bs-target="#tab-admin"><i class="fa-solid fa-user-shield"></i> BẢNG ĐIỀU KHIỂN ADMIN</button>
+                </li>
+                {% else %}
+                <li class="nav-item" role="presentation" style="width: 100%;">
+                    <button class="nav-link active w-100" data-bs-toggle="pill" data-bs-target="#tab-user"><i class="fa-solid fa-users"></i> TIỆN ÍCH NGƯỜI DÂN</button>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+
+        <div class="tab-content">
+            {% if is_admin %}
+            <div class="tab-pane fade show active" id="tab-admin">
+                <div class="row g-2 mb-2">
+                    <div class="col-6"><div class="stat-box bg-secondary"><div class="num">{{ stats.cho_duyet }}</div><div class="lbl">Chờ Duyệt</div></div></div>
+                    <div class="col-6"><div class="stat-box bg-danger"><div class="num">{{ stats.moi }}</div><div class="lbl">Đã tiếp nhận</div></div></div>
+                    <div class="col-6"><div class="stat-box bg-warning text-dark"><div class="num">{{ stats.dang_xu_ly }}</div><div class="lbl">Đang Xử Lý</div></div></div>
+                    <div class="col-6"><div class="stat-box bg-success"><div class="num">{{ stats.da_xong }}</div><div class="lbl">Hoàn tất</div></div></div>
+                </div>
+
+                <button class="btn btn-outline-danger w-100 mb-3 fw-bold" onclick="toggleHeatmap()"><i class="fa-solid fa-fire"></i> Bật / Tắt Bản đồ Nhiệt (Heatmap)</button>
+
+                <div class="tool-card border-primary">
+                    <div class="tool-title text-primary"><i class="fa-solid fa-file-excel"></i> Bộ lọc & Báo cáo</div>
+                    <form method="GET" action="{% url 'ban_do' %}">
+                        <div class="row g-2 mb-2">
+                            <div class="col-6"><label class="small fw-bold">Từ ngày:</label><input type="date" name="tu_ngay" class="form-control form-control-sm" value="{{ tu_ngay }}"></div>
+                            <div class="col-6"><label class="small fw-bold">Đến ngày:</label><input type="date" name="den_ngay" class="form-control form-control-sm" value="{{ den_ngay }}"></div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-sm btn-primary w-50 fw-bold">Lọc Dữ Liệu</button>
+                            <a href="/xuat-csv/?tu_ngay={{ tu_ngay }}&den_ngay={{ den_ngay }}" class="btn btn-sm btn-success w-50 fw-bold"><i class="fa-solid fa-download"></i> Xuất Excel</a>
+                            
+                            <button type="button" class="btn btn-sm btn-warning w-30 fw-bold" onclick="document.getElementById('inputImport').click()"><i class="fa-solid fa-upload"></i> Nhập Excel</button>
+                            <input type="file" id="inputImport" style="display:none" accept=".csv" onchange="nhapDuLieuCSV(this)">
+                        </div>
+                        {% if tu_ngay or den_ngay %}<a href="/" class="d-block text-center mt-2 small text-danger text-decoration-none">Hủy bộ lọc</a>{% endif %}
+                    </form>
+                </div>
+
+                <div class="tool-card" style="background-color: #f0fdf4; border-color: #bbf7d0;">
+                    <div class="tool-title text-success"><i class="fa-solid fa-truck-fast"></i> Chỉ đường & Điều phối</div>
+                    <select id="transportMode" class="form-select mb-2" onchange="capNhatPhuongTien()">
+                        <option value="driving">🚗 Xe tải thi công (Mặc định)</option>
+                        <option value="cycling">🚲 Xe máy tuần tra</option>
+                        <option value="walking">🚶 Đi bộ / Vào hẻm</option>
+                    </select>
+                    <div class="d-flex gap-2 mb-2">
+                        <button class="btn btn-sm btn-outline-primary w-50" onclick="chonDiemBatDau()"><i class="fa-solid fa-location-dot"></i> Ghim điểm đi</button>
+                        <button class="btn btn-sm btn-primary w-50" onclick="gpsBatDau()"><i class="fa-solid fa-location-crosshairs"></i> Vị trí GPS</button>
+                    </div>
+                    <div id="routeInfo" style="display:none; background: white; padding: 12px; border-radius: 8px; border: 1px solid #d1d5db;">
+                        <p id="routeDetails" style="margin: 0; font-size: 0.85rem; color: #374151;">Đang tính toán lộ trình...</p>
+                        <button class="btn btn-sm btn-outline-danger mt-2 w-100" onclick="xoaDuongDi()"><i class="fa-solid fa-xmark"></i> Hủy lộ trình</button>
+                    </div>
+                </div>
+
+                <div class="tool-card">
+                    <div class="tool-title"><i class="fa-solid fa-draw-polygon"></i> Phân Tích Không Gian (Admin)</div>
+                    <form method="GET" id="formQuetPolygon">
+                        <button type="button" class="btn btn-outline-danger w-100 mb-2 fw-bold" onclick="batCheDoVePoly()"><i class="fa-solid fa-pen-nib"></i> Vẽ Vùng Quét (Đa giác)</button>
+                        <input type="hidden" name="polygon" id="inputPolygon">
+                        <div class="input-group mt-2">
+                            <button type="button" class="btn btn-primary" style="width: 50%;" onclick="batCheDoQuet()"><i class="fa-solid fa-crosshairs"></i> Tâm quét</button>
+                            <input type="number" name="radius" class="form-control" placeholder="Bán kính" value="{{ radius_info.r }}">
+                            <span class="input-group-text">km</span>
+                            <button class="btn btn-dark" type="submit">Quét</button>
+                        </div>
+                        {% if radius_info or polygon_info %}
+                        <a href="/ban-do/" class="btn btn-danger w-100 mt-2"><i class="fa-solid fa-xmark"></i> Hủy các lệnh Quét</a>
+                        {% endif %}
+                    </form>
+                </div>
+
+                <div class="table-container">
+                    <div class="p-2 bg-light border-bottom fw-bold text-center text-dark" style="font-size: 0.85rem;">DANH SÁCH SỰ CỐ & DUYỆT</div>
+                    <select id="adminFilterStatus" class="form-select border-0 bg-light border-bottom" onchange="locBangAdmin()">
+                        <option value="TatCa">📍 Xem tất cả</option>
+                        <option value="ChoDuyet">⚪ ĐANG CHỜ DUYỆT</option>
+                        <option value="Moi">🔴 Đã tiếp nhận</option>
+                        <option value="DangXuLy">🟠 Đang xử lý</option>
+                        <option value="DaXuLy">🟢 Hoàn tất</option>
+                    </select>
+                    <div style="max-height: 250px; overflow-y: auto;">
+                        <table class="table admin-table mb-0">
+                            <thead class="sticky-top"><tr><th>Tiêu đề</th><th width="100">Trạng thái</th><th width="50" class="text-center">Đến</th></tr></thead>
+                            <tbody id="adminTableBody">
+                                {% for item in raw_data %}
+                                <tr class="admin-row" data-status="{{ item.trang_thai }}">
+                                    <td><div class="fw-bold text-dark text-truncate" style="max-width: 150px;" title="{{ item.tieu_de }}">{{ item.tieu_de }}</div><div class="text-muted small">{{ item.ngay }}</div></td>
+                                    <td>
+                                        {% if item.trang_thai == 'ChoDuyet' %}<span class="status-badge badge-choduyet">Chờ duyệt</span>
+                                        {% elif item.trang_thai == 'Moi' %}<span class="status-badge badge-moi">Đã tiếp nhận</span>
+                                        {% elif item.trang_thai == 'DangXuLy' %}<span class="status-badge badge-xl">Đang xử lý</span>
+                                        {% else %}<span class="status-badge badge-xong">Hoàn tất</span>{% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-light border text-primary mb-1" onclick="focusToPoint('{{ item.lat|safe }}', '{{ item.lng|safe }}')"><i class="fa-solid fa-crosshairs"></i></button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+            {% else %}
+            <div class="tab-pane fade show active" id="tab-user">
+                
+                <div class="tool-card text-center">
+                    <div class="tool-title justify-content-center">Tiến độ đô thị (Đã duyệt)</div>
+                    <div style="height: 180px;"><canvas id="userPieChart"></canvas></div>
+                    <p class="text-muted mt-2 small">Ghi nhận hiển thị: <b>{{ so_luong }}</b> sự cố</p>
+                </div>
+                
+                <button class="btn btn-outline-danger w-100 mb-3 fw-bold" onclick="toggleHeatmap()"><i class="fa-solid fa-fire"></i> Xem Điểm Nóng (Heatmap)</button>
+
+                <div class="tool-card border-primary bg-light">
+                    <div class="tool-title text-primary"><i class="fa-solid fa-list-check"></i> Bảng điều khiển cá nhân</div>
+                    <select id="userDashboardFilter" class="form-select mb-2" onchange="thucHienTimKiem()" style="font-weight: bold;">
+                        <option value="TatCa">📍 Xem tất cả sự cố</option>
+                        {% if is_logged_in %}
+                        <option value="CuaToi" class="text-danger">👤 Lịch sử phản ánh (Của tôi)</option>
+                        <option value="TheoDoi" class="text-primary">🔖 Phản ánh quan tâm</option>
+                        {% endif %}
+                        <option value="Moi">🔴 Chỉ hiện: Đã tiếp nhận</option>
+                        <option value="DangXuLy">🟠 Chỉ hiện: Đang xử lý</option>
+                        <option value="DaXuLy">🟢 Chỉ hiện: Hoàn tất</option>
+                    </select>
+                    <div class="input-group mb-3">
+                        <input type="text" id="userSearch" class="form-control" placeholder="Tìm tên sự cố..." onkeypress="checkEnter(event)">
+                        <button class="btn btn-primary" onclick="thucHienTimKiem()"><i class="fa-solid fa-search"></i></button>
+                    </div>
+                </div>
+
+                <div class="tool-card" style="background-color: #f0fdf4; border-color: #bbf7d0;">
+                    <div class="tool-title text-success"><i class="fa-solid fa-route"></i> Tìm đường đến sự cố</div>
+                    <select id="transportMode" class="form-select mb-2" onchange="capNhatPhuongTien()">
+                        <option value="driving">🚗 Ô tô / Xe máy</option>
+                        <option value="cycling">🚲 Xe đạp</option>
+                        <option value="walking">🚶 Đi bộ</option>
+                    </select>
+                    <div class="d-flex gap-2 mb-2">
+                        <button class="btn btn-sm btn-outline-primary w-50" onclick="chonDiemBatDau()"><i class="fa-solid fa-location-dot"></i> Ghim điểm đi</button>
+                        <button class="btn btn-sm btn-primary w-50" onclick="gpsBatDau()"><i class="fa-solid fa-location-crosshairs"></i> Vị trí GPS</button>
+                    </div>
+                    <div id="routeInfo" style="display:none; background: white; padding: 12px; border-radius: 8px; border: 1px solid #d1d5db;">
+                        <p id="routeDetails" style="margin: 0; font-size: 0.85rem; color: #374151;">Đang tính toán lộ trình...</p>
+                        <button class="btn btn-sm btn-outline-danger mt-2 w-100" onclick="xoaDuongDi()"><i class="fa-solid fa-xmark"></i> Hủy lộ trình</button>
+                    </div>
+                </div>
+
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="map-container">
+        <button id="toggle-btn">
+            <i class="fa fa-bars"></i>
+        </button>
+        <div id="map"></div>
+        <button class="btn-report-float" onclick="{% if is_logged_in %}batCheDoBaoCao(){% else %}yeuCauDangNhap(){% endif %}">
+            <i class="fa-solid fa-camera fa-lg me-2"></i> Gửi Phản Ánh
+        </button>
+    </div>
+</div>
+
+<div class="modal fade" id="reportModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-danger text-white"><h5 class="modal-title fw-bold">Gửi Phản Ánh</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body p-4">
+                <form id="formBaoCao">
+                    <div class="mb-3 p-3 bg-light rounded-3 border">
+                        <div id="lblToaDo" class="fw-bold text-primary fs-6">Đang lấy dữ liệu GPS...</div>
+                        <input type="hidden" id="inputLat"><input type="hidden" id="inputLng"><input type="hidden" id="inputQuan">
+                    </div>
+                    <div class="mb-3"><label class="fw-bold">Tiêu đề (Ngắn gọn):</label><input type="text" id="inputTieuDe" class="form-control" placeholder="Ví dụ: Rác thải bốc mùi..." required></div>
+                    <div class="mb-3"><label class="fw-bold">Mô tả chi tiết:</label><textarea id="inputMoTa" class="form-control" rows="3" placeholder="Nêu rõ tình trạng..."></textarea></div>
+                    <div class="mb-3">
+                        <label class="fw-bold text-danger"><i class="fa-solid fa-image"></i> Hình ảnh minh chứng:</label>
+                        <input type="file" id="inputHinh" class="form-control" accept="image/*" multiple onchange="previewImages()">
+                        <div id="imagePreview" class="d-flex flex-wrap gap-2 mt-2"></div>
+                    </div>
+                    {% if not is_admin %}
+                    <div class="form-check mt-3 border p-2 rounded bg-white">
+                        <input class="form-check-input ms-1" type="checkbox" id="inputAnDanh">
+                        <label class="form-check-label fw-bold text-secondary ms-2" for="inputAnDanh">
+                            🕵️ Gửi phản ánh ẩn danh
+                        </label>
+                    </div>
+                    {% endif %}
+                </form>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-danger w-100 fw-bold" onclick="guiBaoCao()">Gửi cho Cán Bộ Duyệt</button></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="adminModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white"><h5 class="modal-title fw-bold">Xử lý & Duyệt Sự Cố</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body p-4">
+                <input type="hidden" id="editId">
+                <div class="mb-3">
+                    <label class="fw-bold">Cập nhật Trạng thái:</label>
+                    <select id="editStatus" class="form-select" onchange="toggleUploadXong()">
+                        <option value="ChoDuyet">⚪ Đang Chờ Duyệt</option>
+                        <option value="Moi">🔴 Đã tiếp nhận</option>
+                        <option value="DangXuLy">🟠 Đang xử lý</option>
+                        <option value="DaXuLy">🟢 Hoàn tất</option>
+                    </select>
+                </div>
+                <div class="mb-3" id="divHinhXong" style="display:none;">
+                    <label class="fw-bold text-success">📸 Tải ảnh đã khắc phục lên:</label>
+                    <input type="file" id="editHinhXong" class="form-control" accept="image/*" onchange="previewAdminHinhXong(this)">
+                    <img id="previewHinhXongAdmin" src="" style="width: 100%; height: 160px; object-fit: cover; border-radius: 8px; border: 2px dashed #10b981; display: none; margin-top: 10px;">
+                </div>
+                <div class="mb-3"><label class="fw-bold">Phản hồi của CQCN:</label><textarea id="editNote" class="form-control" rows="3" placeholder="Ghi chú quá trình xử lý..."></textarea></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary w-100 fw-bold" onclick="luuTrangThai()">Lưu Cập Nhật</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+<script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+<script>
+
+
+    function nhapDuLieuCSV(input) {
+    var fd = new FormData(); fd.append('file_csv', input.files[0]);
+    fetch('/nhap-csv/', { method: 'POST', headers: {'X-CSRFToken': getCSRFToken()}, body: fd })
+    .then(r => r.json()).then(d => { alert(d.message); if(d.status==='success') location.reload(); });
+    }
+
+    function xacNhanSuCo(id) {
+    var fd = new FormData(); fd.append('id', id);
+    fetch('/xac-nhan/', { method: 'POST', headers: {'X-CSRFToken': getCSRFToken()}, body: fd })
+    .then(r => r.json()).then(d => { if(d.status==='success') document.getElementById('upv_'+id).innerText = d.upvotes; });
+    }
+
+    // Logic bật tắt Heatmap
+    var heatLayer = L.heatLayer([], {radius: 25, blur: 15, maxZoom: 17});
+    function toggleHeatmap() {
+    var isOn = document.getElementById('heatmapToggle').checked;
+    if(isOn) {
+        var heatData = dataList.map(d => [d.lat, d.lng, 1]);
+        heatLayer.setLatLngs(heatData).addTo(map);
+        map.removeLayer(markers);
+    } else {
+        map.removeLayer(heatLayer);
+        map.addLayer(markers);
+    }
+    }
+    // 1. CHUẨN BỊ BẢN ĐỒ & BIẾN CƠ BẢN
+    var streetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: 'OSM' });
+    var satelliteMap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Esri' });
+    var map = L.map('map', {zoomControl: false, layers: [streetMap]});
+
+    L.control.zoom({position: 'topright'}).addTo(map);
+    L.control.layers({ "🗺️ Bản đồ Đường phố": streetMap, "🌍 Bản đồ Vệ tinh": satelliteMap }, null, {position: 'bottomleft'}).addTo(map);
+    var geocoder = L.Control.geocoder({
+    defaultMarkGeocode: false,
+    placeholder: "Tìm địa chỉ: 236 Lê Văn Sỹ..."
+    }).on('markgeocode', function(e) {
+    var center = e.geocode.center;
+    map.flyTo(center, 17);
+    L.marker(center).addTo(map).bindPopup(
+        `<b>${e.geocode.name}</b><br>
+        <button class="btn btn-sm btn-danger mt-2 w-100" onclick="batCheDoBaoCaoTaiDay(${center.lat}, ${center.lng}, '${e.geocode.name}')">📍 Báo cáo tại đây</button>`
+    ).openPopup();
+    }).addTo(map);
+
+    function batCheDoBaoCaoTaiDay(lat, lng, addr) {
+    document.getElementById('inputLat').value = lat;
+    document.getElementById('inputLng').value = lng;
+    document.getElementById('inputQuan').value = addr;
+    document.getElementById('lblToaDo').innerHTML = `📍 ${addr}`;
+    // Thêm một input ẩn trong form <form id="formBaoCao"> để gửi địa chỉ này đi
+    if(!document.getElementById('inputDiaChi')) {
+        document.getElementById('formBaoCao').insertAdjacentHTML('beforeend', '<input type="hidden" id="inputDiaChi">');
+    }
+    document.getElementById('inputDiaChi').value = addr;
+    new bootstrap.Modal(document.getElementById('reportModal')).show(); 
+    }
+   // --- BẮT ĐẦU ĐOẠN ĐỌC TỌA ĐỘ TỪ LINK ---
+    var urlParams = new URLSearchParams(window.location.search);
+    var fLatStr = urlParams.get('focus_lat');
+    var fLngStr = urlParams.get('focus_lng');
+
+    if (fLatStr && fLngStr) {
+        // Đổi dấu phẩy thành dấu chấm
+        var fLat = parseFloat(fLatStr.replace(',', '.'));
+        var fLng = parseFloat(fLngStr.replace(',', '.'));
+
+        if (!isNaN(fLat) && !isNaN(fLng)) {
+            // Nhảy đúng điểm và Zoom sâu
+            map.setView([fLat, fLng], 18);
+            
+            // Đợi nửa giây cho marker load xong rồi tự động mở Popup
+            setTimeout(function() {
+                markers.eachLayer(function(layer) {
+                    var p = layer.getLatLng();
+                    if (Math.abs(p.lat - fLat) < 0.0001 && Math.abs(p.lng - fLng) < 0.0001) {
+                        markers.zoomToShowLayer(layer, function() {
+                            layer.openPopup();
+                        });
+                    }
+                });
+            }, 500);
+        }
+    } else {
+        // Nếu không có toạ độ từ link thì load vị trí cũ hoặc mặc định (HCM)
+        var savedLat = sessionStorage.getItem('mapLat'); 
+        var savedLng = sessionStorage.getItem('mapLng'); 
+        var savedZoom = sessionStorage.getItem('mapZoom');
+        if (savedLat && savedLng && savedZoom) { 
+            map.setView([savedLat, savedLng], savedZoom); 
+        } else { 
+            map.setView([10.776, 106.701], 12); 
+        } 
+    }
+    // --- KẾT THÚC ĐOẠN ĐỌC TỌA ĐỘ ---
+
+    // (Giữ nguyên các dòng bên dưới của ông nha)
+    var dataList = {{ danh_sach_diem|safe }};
+    var markers = L.markerClusterGroup();
+    var heatLayer = null; 
+    var isHeatmapOn = false;
+    var isAdmin = {% if is_admin %}true{% else %}false{% endif %};
+    var isLogged = {% if is_logged_in %}true{% else %}false{% endif %};
+    var routingControl = null, startLat = null, startLng = null, destLat = null, destLng = null, markerDiemDi = null;
+
+    // 2. BẢO MẬT & ĐỊNH NGHĨA CÁC HÀM TOÀN CỤC
+    window.getCSRFToken = function() {
+        var tokenInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
+        if (tokenInput) return tokenInput.value;
+        let cv = null; let ck = document.cookie.split(';'); 
+        for (let i = 0; i < ck.length; i++) { let c = ck[i].trim(); if (c.startsWith('csrftoken=')) { cv = c.substring('csrftoken='.length); break; } } 
+        return cv;
+    };
+
+    window.reloadWithState = function(targetUrl = null) {
+        sessionStorage.setItem('mapLat', map.getCenter().lat); sessionStorage.setItem('mapLng', map.getCenter().lng); sessionStorage.setItem('mapZoom', map.getZoom());
+        if(targetUrl) window.location.href = targetUrl; else location.reload();
+    };
+
+    window.copyToClipboard = function(lat, lng) {
+        let url = window.location.origin + `/?center_lat=${lat}&center_lng=${lng}&radius=0.1`;
+        navigator.clipboard.writeText(url).then(() => alert("📍 Đã copy link tọa độ sự kiện để chia sẻ!"));
+    };
+
+    window.getColor = function(st) { return st==='ChoDuyet' ? '#9ca3af' : (st==='Moi' ? '#dc3545' : (st==='DangXuLy' ? '#f59e0b' : '#10b981')); };
+    window.getText = function(st) { return st==='ChoDuyet' ? 'Chờ Duyệt' : (st==='Moi' ? 'Đã tiếp nhận' : (st==='DangXuLy' ? 'Đang xử lý' : 'Hoàn tất')); };
+    window.getBadgeClass = function(st) { return st==='ChoDuyet' ? 'badge-choduyet' : (st==='Moi' ? 'badge-moi' : (st==='DangXuLy' ? 'badge-xl' : 'badge-xong')); };
+
+    window.previewPopupImg = function(input, id) { if (input.files && input.files[0]) { var reader = new FileReader(); reader.onload = function(e) { document.getElementById('preview_img_' + id).src = e.target.result; document.getElementById('preview_box_' + id).style.display = 'block'; }; reader.readAsDataURL(input.files[0]); } };
+    window.previewAdminHinhXong = function(input) { if (input.files && input.files[0]) { var reader = new FileReader(); reader.onload = function(e) { document.getElementById('previewHinhXongAdmin').src = e.target.result; document.getElementById('previewHinhXongAdmin').style.display = 'block'; }; reader.readAsDataURL(input.files[0]); } };
+
+    // --- CÁC HÀM GỌI DỮ LIỆU ---
+    window.toggleTheoDoi = function(id) {
+        if(!isLogged) { alert("Vui lòng Đăng nhập để lưu sự kiện này!"); return; }
+        var fd = new FormData(); fd.append('id', id);
+        fetch('/theo-doi-su-co/', { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken() }, body: fd }).then(r => r.json()).then(d => { if(d.status === 'success') reloadWithState(); else alert("Lỗi: " + d.message); }).catch(e => alert("Lỗi mạng: " + e));
+    };
+
+    window.guiBinhLuan = function(id) {
+        var noi_dung = document.getElementById('cmt_' + id).value; 
+        var hinh = document.getElementById('hinh_cmt_' + id).files[0];
+        var cbAnDanhCmt = document.getElementById('an_danh_cmt_' + id); 
+        if (!noi_dung) { alert("Vui lòng nhập bình luận!"); return; }
+        var fd = new FormData(); fd.append('id_diem', id); fd.append('noi_dung', noi_dung); 
+        if (cbAnDanhCmt && cbAnDanhCmt.checked) { fd.append('an_danh', 'true'); }
+        if(hinh) fd.append('hinh_anh_minh_chung', hinh);
+        fetch('/gui-binh-luan/', { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken() }, body: fd }).then(r => r.json()).then(d => { if(d.status === 'success') reloadWithState(); else alert("Lỗi: " + d.message); }).catch(e => alert("Lỗi mạng: " + e));
+    };
+    
+    window.xoaBinhLuan = function(id) { 
+        if(confirm("Xóa bình luận này?")) { var fd = new FormData(); fd.append('id', id); fetch('/xoa-binh-luan/', { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken() }, body: fd }).then(r => r.json()).then(d => { if(d.status === 'success') reloadWithState(); else alert(d.message); }).catch(e => alert("Lỗi mạng: " + e)); } 
+    };
+
+    window.guiBaoCao = function() {
+        var fd = new FormData(); 
+        fd.append('tieu_de', document.getElementById('inputTieuDe').value); fd.append('mo_ta_chi_tiet', document.getElementById('inputMoTa').value); fd.append('lat', document.getElementById('inputLat').value); fd.append('lng', document.getElementById('inputLng').value); fd.append('quan_huyen', document.getElementById('inputQuan').value);
+        var cbAnDanh = document.getElementById('inputAnDanh'); if (cbAnDanh) fd.append('an_danh', cbAnDanh.checked); 
+        var files = document.getElementById('inputHinh').files; for (var i = 0; i < files.length; i++) { fd.append('hinh_anh', files[i]); }
+        fetch('/gui-phan-anh/', { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken() }, body: fd }).then(r => r.json()).then(d => { alert(d.message); if(d.status === 'success') reloadWithState(); }).catch(e => alert("Lỗi mạng: " + e));
+    };
+
+    window.xoaPhanAnh = function(id) { 
+        if(confirm("⚠️ Xóa vĩnh viễn sự cố này?")) { var fd = new FormData(); fd.append('id', id); fetch('/xoa-phan-anh/', { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken() }, body: fd }).then(r => r.json()).then(d => { if(d.status === 'success') reloadWithState(); else alert(d.message); }).catch(e => alert("Lỗi mạng: " + e)); } 
+    };
+
+    window.luuTrangThai = function() { 
+        var fd = new FormData(); fd.append('id', document.getElementById('editId').value); fd.append('trang_thai', document.getElementById('editStatus').value); fd.append('ghi_chu', document.getElementById('editNote').value); var hinhXong = document.getElementById('editHinhXong').files[0]; if(hinhXong) fd.append('hinh_anh_xong', hinhXong); 
+        fetch('/cap-nhat/', { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken() }, body: fd }).then(r => r.json()).then(d => { if(d.status === 'success') reloadWithState(); else alert("Lỗi hệ thống: " + d.message); }).catch(e => alert("Lỗi mạng: " + e)); 
+    };
+
+    window.openEditModal = function(btn) { 
+        document.getElementById('editId').value = btn.getAttribute('data-id'); document.getElementById('editStatus').value = btn.getAttribute('data-st'); document.getElementById('editNote').value = btn.getAttribute('data-note'); document.getElementById('previewHinhXongAdmin').style.display = 'none'; document.getElementById('editHinhXong').value = ''; window.toggleUploadXong(); new bootstrap.Modal(document.getElementById('adminModal')).show(); 
+    };
+    window.toggleUploadXong = function() { var st = document.getElementById('editStatus').value; document.getElementById('divHinhXong').style.display = (st === 'DaXuLy') ? 'block' : 'none'; };
+
+    window.toggleHeatmap = function() {
+        isHeatmapOn = !isHeatmapOn;
+        if (isHeatmapOn) {
+            map.removeLayer(markers);
+            var heatData = dataList.filter(d => d.trang_thai !== 'DaXuLy').map(d => [parseFloat(d.lat), parseFloat(d.lng), 1]);
+            heatLayer = L.heatLayer(heatData, {radius: 25, blur: 15, maxZoom: 17}).addTo(map);
+        } else {
+            if (heatLayer) map.removeLayer(heatLayer);
+            map.addLayer(markers);
+            // --- ĐOẠN THÊM MỚI: TỰ ĐỘNG BẬT POPUP KHI TÌM KIẾM TỪ TRANG KHÁC ---
+             if (fLat && fLng && !isHeatmapOn) {
+            markers.eachLayer(function(layer) {
+            var lat = layer.getLatLng().lat;
+            var lng = layer.getLatLng().lng;
+            // Kiểm tra khớp tọa độ (sai số nhỏ gọn)
+            if (Math.abs(lat - parseFloat(fLat)) < 0.00001 && Math.abs(lng - parseFloat(fLng)) < 0.00001) {
+                markers.zoomToShowLayer(layer, function() {
+                    layer.openPopup();
+                });
+                 }
+             });
+        }
+        }
+    };
+
+    // --- 3. ĐIỀU HƯỚNG TÌM ĐƯỜNG (DÙNG CHUNG) ---
+    window.batDauTimDuong = function(lat, lng) {
+        destLat = parseFloat(lat); destLng = parseFloat(lng);
+        document.getElementById("routeInfo").style.display = "block";
+        if(startLat && startLng) {
+            veDuongDi(startLat, startLng, destLat, destLng);
+        } else {
+            document.getElementById("routeDetails").innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Vui lòng nhấp vào [Vị trí GPS] hoặc [Ghim điểm đi] ở thanh công cụ bên trái...";
+            // KHÔNG tự động lấy GPS nữa, để người dùng tự chọn cách ghim điểm đi
+        }
+    };
+
+    window.gpsBatDau = function() {
+        if (navigator.geolocation) {
+            document.getElementById("routeInfo").style.display = "block";
+            document.getElementById("routeDetails").innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Đang lấy GPS...";
+            navigator.geolocation.getCurrentPosition(function(pos) {
+                startLat = pos.coords.latitude; startLng = pos.coords.longitude;
+                if(markerDiemDi) map.removeLayer(markerDiemDi);
+                markerDiemDi = L.marker([startLat, startLng]).addTo(map).bindPopup("Vị trí của bạn").openPopup();
+                map.flyTo([startLat, startLng], 15);
+                if (destLat) veDuongDi(startLat, startLng, destLat, destLng);
+                else document.getElementById("routeDetails").innerHTML = "✅ Đã lấy GPS! Giờ hãy chọn Kính nhắm (Mũi tên xanh) trên bản đồ để tìm đường.";
+            }, function() { 
+                alert("Không lấy được GPS. Vui lòng bấm nút 'Ghim điểm đi'."); 
+                document.getElementById("routeDetails").innerHTML = "Lỗi GPS.";
+            });
+        } else { alert("Trình duyệt không hỗ trợ GPS."); }
+    };
+
+    window.chonDiemBatDau = function() {
+        alert("📍 Click vào một vị trí bất kỳ trên bản đồ để làm ĐIỂM XUẤT PHÁT!");
+        map.getContainer().style.cursor = 'crosshair';
+        map.once('click', function(e) {
+            startLat = e.latlng.lat; startLng = e.latlng.lng;
+            map.getContainer().style.cursor = '';
+            if(markerDiemDi) map.removeLayer(markerDiemDi);
+            markerDiemDi = L.marker([startLat, startLng]).addTo(map).bindPopup("Điểm xuất phát").openPopup();
+            document.getElementById("routeInfo").style.display = "block";
+            if (destLat) veDuongDi(startLat, startLng, destLat, destLng);
+            else document.getElementById("routeDetails").innerHTML = "✅ Đã ghim điểm đi! Giờ hãy chọn Kính nhắm (Mũi tên xanh) trên bản đồ để tìm đường.";
+        });
+    };
+
+    window.veDuongDi = function(slat, slng, dlat, dlng) { 
+        if(routingControl) map.removeControl(routingControl); 
+        var mode = document.getElementById("transportMode").value; 
+        var serviceUrl = 'https://routing.openstreetmap.de/routed-car/route/v1'; 
+        if (mode === 'cycling') serviceUrl = 'https://routing.openstreetmap.de/routed-bike/route/v1'; 
+        if (mode === 'walking') serviceUrl = 'https://routing.openstreetmap.de/routed-foot/route/v1'; 
+        
+        document.getElementById("routeDetails").innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Đang tính toán lộ trình..."; 
+        
+        routingControl = L.Routing.control({ 
+            waypoints: [ L.latLng(slat, slng), L.latLng(dlat, dlng) ], 
+            router: L.Routing.osrmv1({ serviceUrl: serviceUrl }), 
+            lineOptions: { styles: [{color: '#2563eb', opacity: 0.8, weight: 6}] }, 
+            createMarker: function() { return null; }, 
+            fitSelectedRoutes: true, show: false, addWaypoints: false, routeWhileDragging: false 
+        }).addTo(map); 
+        
+        routingControl.on('routesfound', function(e) { 
+            var sum = e.routes[0].summary; 
+            var dist = (sum.totalDistance / 1000).toFixed(2); 
+            var time = Math.round(sum.totalTime / 60); 
+            var icon = mode === 'driving' ? '🚗' : (mode === 'cycling' ? '🚲' : '🚶'); 
+            document.getElementById("routeDetails").innerHTML = `<b>Cách:</b> <span class="text-primary fw-bold">${dist} km</span> <br><b>Đến nơi:</b> <span class="text-primary fw-bold">Khoảng ${time} phút</span> ${icon}`; 
+        }); 
+    };
+
+    window.capNhatPhuongTien = function() { if(startLat && destLat) veDuongDi(startLat, startLng, destLat, destLng); };
+    window.xoaDuongDi = function() { 
+        if(routingControl) map.removeControl(routingControl); 
+        if(markerDiemDi) map.removeLayer(markerDiemDi);
+        routingControl = null; startLat = null; destLat = null; document.getElementById("routeInfo").style.display = "none"; 
+    };
+
+
+    // 4. KHỐI CÔNG CỤ ĐẶC QUYỀN ADMIN (Kính nhắm, Lọc bảng, Vẽ Đa Giác)
+    {% if is_admin %}
+        window.locBangAdmin = function() {
+            var st = document.getElementById('adminFilterStatus').value;
+            document.querySelectorAll('.admin-row').forEach(r => {
+                if(st === 'TatCa' || r.getAttribute('data-status') === st) r.style.display = '';
+                else r.style.display = 'none';
+            });
+        };
+
+        // LỖI KÍNH NHẮM ĐÃ ĐƯỢC XỬ LÝ TRIỆT ĐỂ Ở ĐÂY (Xử lý dấu phẩy tiếng Việt)
+        window.focusToPoint = function(latStr, lngStr) { 
+            var lat = parseFloat(String(latStr).replace(',', '.'));
+            var lng = parseFloat(String(lngStr).replace(',', '.'));
+            if(!isNaN(lat) && !isNaN(lng)) { map.flyTo([lat, lng], 17); }
+            else { alert("Lỗi hệ tọa độ từ Database!"); }
+        };
+        
+        window.batCheDoQuet = function() { alert("📍 Click vào bản đồ để chọn TÂM QUÉT BÁN KÍNH"); map.once('click', function(e) { var radius = document.querySelector('input[name="radius"]').value; if(radius) reloadWithState(`?center_lat=${e.latlng.lat}&center_lng=${e.latlng.lng}&radius=${radius}`); }); };
+
+        // FIX LỖI ĐA GIÁC: TẠO SẴN THANH CÔNG CỤ TOOLBAR TRÊN BẢN ĐỒ
+        var drawnItems = new L.FeatureGroup().addTo(map);
+        var drawControl = new L.Control.Draw({
+            edit: { featureGroup: drawnItems },
+            draw: { polyline: false, marker: false, circlemarker: false, circle: false, rectangle: false, polygon: { shapeOptions: { color: '#ef4444', weight: 3 } } }
+        });
+        map.addControl(drawControl); // Cho Toolbar hiện sẵn ở góc trái
+
+        window.batCheDoVePoly = function() {
+            // Khi bấm nút đỏ, ép thanh công cụ tự động bật chế độ vẽ luôn (Đỡ phải nhấp vào Toolbar)
+            new L.Draw.Polygon(map, drawControl.options.polygon).enable();
+        };
+
+        map.on(L.Draw.Event.CREATED, function (e) {
+            drawnItems.clearLayers();
+            drawnItems.addLayer(e.layer);
+            var coords = e.layer.getLatLngs()[0].map(pt => [pt.lat, pt.lng]);
+            document.getElementById('inputPolygon').value = JSON.stringify(coords);
+            document.getElementById('formQuetPolygon').submit(); // Tự động Quét
+        });
+    {% endif %}
+
+
+    // 5. KHỐI CÔNG CỤ CHUNG & USER
+    window.thucHienTimKiem = function() { 
+        var kw = document.getElementById('userSearch') ? document.getElementById('userSearch').value.toLowerCase() : ''; 
+        var st = document.getElementById('userDashboardFilter') ? document.getElementById('userDashboardFilter').value : 'TatCa'; 
+        var filteredData = dataList.filter(d => { 
+            let matchSearch = d.tieu_de.toLowerCase().includes(kw);
+            let matchStatus = true;
+            if(st === 'CuaToi') matchStatus = d.is_owner;
+            else if (st === 'TheoDoi') matchStatus = d.da_theo_doi;
+            else if (st !== 'TatCa') matchStatus = (d.trang_thai === st);
+            return matchSearch && matchStatus; 
+        }); 
+        renderMarkers(filteredData); 
+    };
+    
+    window.yeuCauDangNhap = function() { if(confirm("📍 Bạn cần đăng nhập để gửi phản ánh hoặc tương tác. Chuyển về trang đăng nhập?")) window.location.href = "{% url 'login' %}"; };
+    window.checkEnter = function(event) { if (event.key === "Enter") thucHienTimKiem(); };
+    window.batCheDoBaoCao = function() { alert("📍 Click vào vị trí xảy ra sự cố trên Bản đồ để báo cáo!"); map.getContainer().style.cursor = 'crosshair'; map.once('click', function(e) { document.getElementById('inputLat').value = e.latlng.lat; document.getElementById('inputLng').value = e.latlng.lng; document.getElementById('lblToaDo').innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang lấy định vị...`; new bootstrap.Modal(document.getElementById('reportModal')).show(); map.getContainer().style.cursor = ''; fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${e.latlng.lat}&lon=${e.latlng.lng}&email=student@webgis.com`).then(res => res.json()).then(data => { var q = data.address.city_district || data.address.suburb || data.address.county || "Khu vực tự do"; document.getElementById('inputQuan').value = q; document.getElementById('lblToaDo').innerHTML = `📍 <b>${q}</b>`; }).catch(err => { document.getElementById('inputQuan').value = "Chưa xác định"; document.getElementById('lblToaDo').innerHTML = "Lỗi kết nối"; }); }); };
+    window.previewImages = function() { var preview = document.getElementById('imagePreview'); preview.innerHTML = ''; var files = document.getElementById('inputHinh').files; if (files) { [].forEach.call(files, function(file) { var reader = new FileReader(); reader.onload = function(event) { var img = document.createElement('img'); img.src = event.target.result; img.style.width = '65px'; img.style.height = '65px'; img.style.objectFit = 'cover'; img.style.borderRadius = '8px'; preview.appendChild(img); }; reader.readAsDataURL(file); }); } };
+
+    // 6. RENDER MARKERS & CHARTS
+    function renderMarkers(list) {
+        markers.clearLayers();
+        var heatData = [];
+
+        list.forEach(d => {
+            // FIX CHO HEATMAP (Đổi chuỗi tiếng Việt thành số thập phân chuẩn)
+            var cLat = parseFloat(String(d.lat).replace(',', '.'));
+            var cLng = parseFloat(String(d.lng).replace(',', '.'));
+            if (d.trang_thai !== 'DaXuLy' && !isNaN(cLat) && !isNaN(cLng)) heatData.push([cLat, cLng, 1]);
+
+            var icon = L.divIcon({ className: 'custom-icon', html: `<div style="background:${getColor(d.trang_thai)}; width:24px; height:24px; border-radius:50%; border:3px solid white; box-shadow:0 3px 6px rgba(0,0,0,0.3);"></div>`, iconSize: [24, 24] });
+
+            var hinhAnhHTML = '';
+            if (d.danh_sach_hinh && d.danh_sach_hinh.length > 0) {
+                hinhAnhHTML += `<div class="image-gallery" style="display:flex; overflow-x:auto; gap:5px; margin-top:8px; padding-bottom:5px;">`;
+                d.danh_sach_hinh.forEach(imgUrl => { hinhAnhHTML += `<img src="${imgUrl}" onclick="window.open(this.src, '_blank')" style="width:100px; height:80px; object-fit:cover; border-radius:6px; border:1px solid #eee; cursor:pointer;">`; });
+                hinhAnhHTML += `</div>`;
+            }
+
+            var hinhXongHTML = (d.hinh_xong !== '') ? `<div style="margin-top:8px; color:#10b981; font-weight:bold; font-size:12px;">✅ Ảnh đã khắc phục:</div><img src="${d.hinh_xong}" onclick="window.open(this.src, '_blank')" style="width:100%; height:120px; object-fit:cover; border-radius:6px; border:2px solid #10b981; cursor:pointer; margin-top:3px;">` : '';
+            var ghiChuHTML = (d.ghi_chu && d.ghi_chu !== 'None' && d.ghi_chu.trim() !== '') ? `<div style="background:#eff6ff; padding:8px; border-radius:6px; margin-top:8px; font-size:12px; color:#1e3a8a;">👮 <b>CQCN Phản hồi:</b> ${d.ghi_chu}</div>` : '';
+
+            var binhLuanHTML = '';
+            if (d.binh_luans && d.binh_luans.length > 0) {
+                binhLuanHTML = `<div class="cmt-box"><b><i class="fa-solid fa-comments"></i> Bình luận:</b><br>`;
+                d.binh_luans.forEach(b => { 
+                    let nutXoa = isAdmin ? `<i class="fa-solid fa-trash text-danger ms-2" style="cursor:pointer;" onclick="xoaBinhLuan(${b.id})" title="Xóa"></i>` : '';
+                    let imgCmt = b.hinh ? `<br><img src="${b.hinh}" style="width:60px; height:60px; border-radius:4px; margin-top:3px; object-fit:cover;" onclick="window.open(this.src, '_blank')">` : '';
+                    binhLuanHTML += `<div style="border-bottom: 1px dashed #ccc; padding: 4px 0;"><span style="color:#2563eb"><b>${b.user}</b></span>: ${b.nd} ${imgCmt} ${nutXoa}</div>`; 
+                });
+                binhLuanHTML += `</div>`;
+            }
+
+            var popupActions = '';
+            if (isAdmin) {
+                var safeGhiChu = d.ghi_chu ? d.ghi_chu.replace(/"/g, '&quot;').replace(/'/g, '&#39;') : '';
+                popupActions = `<div style="margin-top:8px; border-top:1px solid #e5e7eb; padding-top:8px;"><button onclick="openEditModal(this)" data-id="${d.id}" data-st="${d.trang_thai}" data-note="${safeGhiChu}" class="btn btn-sm btn-primary w-100 mb-1 fw-bold"><i class="fa-solid fa-pen-to-square"></i> Cập Nhật Sự Cố</button><button onclick="xoaPhanAnh(${d.id})" class="btn btn-sm btn-danger w-100 fw-bold"><i class="fa-solid fa-trash"></i> Xóa Điểm Này</button></div>`;
+            } else if (isLogged) {
+                popupActions = `
+                    <div style="margin-top:8px; border-top:1px solid #e5e7eb; padding-top:8px;">
+                        <input type="text" id="cmt_${d.id}" class="form-control form-control-sm mb-1" placeholder="Viết bình luận..." style="font-size:12px;">
+                        <div style="display:flex; gap:5px; align-items:flex-start; margin-bottom:5px;">
+                            <input type="file" id="hinh_cmt_${d.id}" class="form-control form-control-sm" accept="image/*" style="font-size:11px; flex:1;" onchange="previewPopupImg(this, ${d.id})">
+                            <div id="preview_box_${d.id}" style="display:none;"><img id="preview_img_${d.id}" src="" style="width:30px; height:30px; border-radius:4px; object-fit:cover;"></div>
+                        </div>
+                        <div class="form-check mb-1" style="font-size:11px;">
+                            <input class="form-check-input" type="checkbox" id="an_danh_cmt_${d.id}">
+                            <label class="form-check-label text-secondary fw-bold" for="an_danh_cmt_${d.id}">🕵️ Bình luận ẩn danh</label>
+                        </div>
+                        <button onclick="guiBinhLuan(${d.id})" class="btn btn-sm btn-primary w-100 fw-bold mt-1" style="font-size:12px;">Gửi Bình Luận</button>
+                    </div>
+                `;
+            } else { popupActions = `<div style="font-size:10px; color:#ef4444; text-align:center; margin-top:5px;">*Đăng nhập để tương tác</div>`; }
+
+            var theodoiClass = d.da_theo_doi ? 'btn-theodoi active' : 'btn-theodoi';
+            var theodoiIcon = d.da_theo_doi ? 'fa-solid fa-bookmark' : 'fa-regular fa-bookmark';
+            var txtTheoDoi = d.da_theo_doi ? 'Đang quan tâm' : 'Quan tâm';
+            var spanCuaToi = d.is_owner ? `<span class="badge bg-danger" style="font-size:10px; margin-left:5px;">Phản ánh của tôi</span>` : '';
+
+            var popupContent = `
+                <div style="font-family: 'Inter', sans-serif; width: 250px;">
+                    <h6 style="font-weight:700; margin-bottom:5px;">${d.tieu_de} ${spanCuaToi}</h6>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;"><span class="status-badge ${getBadgeClass(d.trang_thai)}">${getText(d.trang_thai)}</span></div>
+                    <div style="display:flex; gap:5px; margin-bottom: 8px;">
+                        <button class="interaction-btn ${theodoiClass}" onclick="toggleTheoDoi(${d.id})" title="Lưu sự cố này"><i class="${theodoiIcon}"></i> ${txtTheoDoi}</button>
+                        <button class="interaction-btn text-success" onclick="batDauTimDuong('${d.lat}', '${d.lng}')" title="Tìm đường đến đây"><i class="fa-solid fa-diamond-turn-right"></i></button>
+                        <button class="interaction-btn text-secondary" onclick="copyToClipboard('${d.lat}', '${d.lng}')" title="Chia sẻ"><i class="fa-solid fa-share-nodes"></i></button>
+                    </div>
+                    <div style="font-size:12px; color:#4b5563; margin-bottom:5px;"><i class="fa-solid fa-user-pen"></i> Người báo: <b>${d.nguoi_tao_ten}</b></div>
+                    <p style="font-size:12px; color:#4b5563; margin-bottom:5px; font-style: italic;">"${d.mo_ta_chi_tiet}"</p>
+                    <div style="font-size:12px; color:#4b5563;"><i class="fa-solid fa-clock"></i> Lúc: <b>${d.ngay.split(' ')[1]}</b> ngày ${d.ngay.split(' ')[0]}</div>
+                    <div style="font-size:12px; color:#4b5563; margin-bottom:8px;"><i class="fa-solid fa-map-location-dot"></i> <b>${d.quan}</b></div>
+                    <div style="font-size:11px; color:#6b7280; font-weight:bold; margin-bottom:5px;"><i class="fa-solid fa-users"></i> ${d.so_nguoi_theo_doi} người đang quan tâm</div>
+                    ${hinhAnhHTML} ${hinhXongHTML} ${ghiChuHTML} ${binhLuanHTML} ${popupActions}
+                </div>
+            `;
+            if(!isNaN(cLat) && !isNaN(cLng)) {
+                markers.addLayer(L.marker([cLat, cLng], {icon: icon}).bindPopup(popupContent));
+            }
+        });
+
+        if (isHeatmapOn) {
+            if (heatLayer) map.removeLayer(heatLayer);
+            heatLayer = L.heatLayer(heatData, {radius: 25, blur: 15, maxZoom: 17}).addTo(map);
+        } else {
+            map.addLayer(markers);
+        }
+    }
+    
+    // THỰC THI HIỂN THỊ
+    renderMarkers(dataList);
+    if (fLat && fLng && !isNaN(fLat) && !isNaN(fLng) && !isHeatmapOn) {
+        markers.eachLayer(function(layer) {
+            var lat = layer.getLatLng().lat;
+            var lng = layer.getLatLng().lng;
+            // Cho phép sai số rất nhỏ để marker khớp chính xác
+            if (Math.abs(lat - fLat) < 0.0001 && Math.abs(lng - fLng) < 0.0001) {
+                markers.zoomToShowLayer(layer, function() {
+                    layer.openPopup();
+                });
+            }
+        });
+    }
+    // ... (Các đoạn code khác phía trên) ...
+
+    // Tìm dòng renderMarkers(dataList); ở gần cuối file
+    renderMarkers(dataList);
+    
+    // Dán đoạn code này ngay phía dưới dòng renderMarkers(dataList)
+    if (!isAdmin) { 
+        new Chart(document.getElementById('userPieChart'), { 
+            type: 'doughnut', 
+            data: { 
+                labels: ['Đã tiếp nhận', 'Đang xử lý', 'Hoàn tất'], 
+                datasets: [{ 
+                    // Chỗ này quan trọng: Lấy dữ liệu từ stats truyền từ views.py
+                    data: [{{ stats.moi|default:0 }}, {{ stats.dang_xu_ly|default:0 }}, {{ stats.da_xong|default:0 }}], 
+                    backgroundColor: ['#ef4444', '#f59e0b', '#10b981'], 
+                    borderWidth: 0 
+                }] 
+            }, 
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                plugins: { legend: { position: 'right' } }, 
+                cutout: '65%' 
+            } 
+        }); 
+    }
+    const btn = document.getElementById("toggle-btn");
+    const sidebar = document.getElementById("sidebar");
+
+    btn.onclick = function () {
+        sidebar.classList.toggle("collapsed");
+
+        // đổi icon cho trực quan
+        btn.innerHTML = sidebar.classList.contains("collapsed")
+            ? '<i class="fa fa-bars"></i>'
+            : '<i class="fa fa-xmark"></i>';
+
+        // fix map bị lệch/ trắng khi resize
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 300);
+    };
+    
+</script>
+</body>
+</html>

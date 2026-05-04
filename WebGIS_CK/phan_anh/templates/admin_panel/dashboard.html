@@ -1,0 +1,74 @@
+{% extends "admin_panel/base_admin.html" %}
+{% block content %}
+
+<div class="ui-section-title">Tổng quan hệ thống</div>
+
+<div class="row g-4">
+
+    <!-- Tổng phản ánh -->
+    <div class="col-md-3">
+        <div class="ui-stat-card ui-glow-hover ui-fade-up">
+            <div class="ui-stat-label">Tổng phản ánh</div>
+            <div class="ui-stat-num">{{ tong }}</div>
+            <div class="ui-muted">Toàn bộ dữ liệu</div>
+        </div>
+    </div>
+
+    <!-- Chờ duyệt -->
+    <div class="col-md-3">
+        <div class="ui-stat-card ui-glow-hover ui-fade-up delay-1">
+            <div class="ui-stat-label">Chờ duyệt</div>
+            <div class="ui-stat-num">{{ cho_duyet }}</div>
+            <div class="ui-chip ui-status-ChoDuyet">Đang chờ xử lý</div>
+        </div>
+    </div>
+
+    <!-- Đang xử lý -->
+    <div class="col-md-3">
+        <div class="ui-stat-card ui-glow-hover ui-fade-up delay-2">
+            <div class="ui-stat-label">Đang xử lý</div>
+            <div class="ui-stat-num">{{ dang_xu_ly }}</div>
+            <div class="ui-chip ui-status-DangXuLy">In progress</div>
+        </div>
+    </div>
+
+    <!-- Hoàn tất -->
+    <div class="col-md-3">
+        <div class="ui-stat-card ui-glow-hover ui-fade-up delay-3">
+            <div class="ui-stat-label">Hoàn tất</div>
+            <div class="ui-stat-num">{{ da_xu_ly }}</div>
+            <div class="ui-chip ui-status-DaXuLy">Completed</div>
+        </div>
+    </div>
+
+</div>
+
+<!-- EXTRA PANEL -->
+<div class="ui-panel mt-4 p-4 ui-fade-up delay-2">
+    <div class="ui-section-title">Thông tin nhanh</div>
+
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="ui-info-box">
+                <div class="ui-info-label">Tổng phản ánh</div>
+                <div class="ui-info-value">{{ tong }}</div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="ui-info-box">
+                <div class="ui-info-label">Đang xử lý</div>
+                <div class="ui-info-value">{{ dang_xu_ly }}</div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="ui-info-box">
+                <div class="ui-info-label">Đã hoàn tất</div>
+                <div class="ui-info-value">{{ da_xu_ly }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

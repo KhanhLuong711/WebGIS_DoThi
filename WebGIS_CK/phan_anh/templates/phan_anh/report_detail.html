@@ -1,0 +1,589 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi tiết phản ánh</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f3f4f6;
+            color: #111827;
+        }
+        .page-wrap {
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 28px 16px 40px;
+        }
+        .hero {
+            background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
+            color: #fff;
+            border-radius: 22px;
+            padding: 28px;
+            margin-bottom: 24px;
+            box-shadow: 0 14px 34px rgba(29, 78, 216, 0.16);
+        }
+        .hero h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+        .hero p {
+            opacity: 0.92;
+            margin-bottom: 0;
+        }
+        .panel, .gallery-card, .comment-card, .meta-card {
+            background: #fff;
+            border: none;
+            border-radius: 18px;
+            box-shadow: 0 10px 26px rgba(0,0,0,0.06);
+        }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 800;
+        }
+        .status-ChoDuyet {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        .status-Moi {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+        .status-DangXuLy {
+            background: #fef3c7;
+            color: #b45309;
+        }
+        .status-DaXuLy {
+            background: #dcfce7;
+            color: #15803d;
+        }
+        .section-title {
+            font-size: 1.05rem;
+            font-weight: 800;
+            margin-bottom: 14px;
+        }
+        .info-box {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 14px;
+            height: 100%;
+        }
+        .info-label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #6b7280;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            letter-spacing: .03em;
+        }
+        .info-value {
+            font-size: 0.96rem;
+            color: #111827;
+            word-break: break-word;
+        }
+        .gallery-img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            border-radius: 16px;
+            background: #e5e7eb;
+        }
+        .done-img {
+            width: 100%;
+            max-height: 360px;
+            object-fit: cover;
+            border-radius: 16px;
+            background: #e5e7eb;
+        }
+        .comment-item {
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 16px;
+            background: #fff;
+        }
+        .comment-user {
+            font-weight: 800;
+            color: #0f172a;
+        }
+        .comment-time {
+            font-size: 0.85rem;
+            color: #6b7280;
+        }
+        .comment-img {
+            margin-top: 12px;
+            width: 100%;
+            max-width: 300px;
+            border-radius: 14px;
+            border: 1px solid #e5e7eb;
+        }
+        .mini-map {
+            width: 100%;
+            height: 350px;
+            border: 0;
+            border-radius: 16px;
+        }
+        .top-actions .btn {
+            border-radius: 12px;
+            font-weight: 700;
+        }
+        .empty-box {
+            text-align: center;
+            padding: 26px;
+            border-radius: 16px;
+            background: #f9fafb;
+            border: 1px dashed #d1d5db;
+            color: #6b7280;
+        }
+        .highlight-note {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 14px;
+            padding: 14px;
+            color: #1e3a8a;
+        }
+        .done-box {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 16px;
+            padding: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-wrap">
+        <div class="hero">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+                <div>
+                    <h1>Chi tiết phản ánh</h1>
+                 
+                    <p>Xem đầy đủ thông tin sự cố, quá trình xử lý, ảnh hiện trường, ảnh sau xử lý và các bình luận liên quan.</p>
+                </div>
+                <div class="top-actions d-flex flex-wrap gap-2">
+                    <a href="/phan-anh-cua-toi/" class="btn btn-light">← Phản ánh của tôi</a>
+           
+                    <a href="/ban-do/" class="btn btn-outline-light">Về bản đồ</a>
+                </div>
+            </div>
+        </div>
+
+        {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+     
+                    <div class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-danger{% else %}alert-warning{% endif %} mb-2">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+    
+            </div>
+        {% endif %}
+
+        <div class="row g-4 mb-4">
+            <div class="col-12 col-xl-8">
+                <div class="panel p-4 h-100">
+                    <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-3">
+            
+                        <div>
+                            <h2 class="fw-bold mb-2">{{ diem.tieu_de }}</h2>
+                            <div class="text-muted">
+                           
+                                Mã phản ánh: <b>#{{ diem.id }}</b>
+                            </div>
+                        </div>
+                        <div>
+              
+                            <span class="status-badge status-{{ diem.trang_thai }}">
+                                {% if diem.trang_thai == 'ChoDuyet' %}
+                                    Chờ duyệt
+        
+                                {% elif diem.trang_thai == 'Moi' %}
+                                    Đã tiếp nhận
+                                {% elif diem.trang_thai == 'DangXuLy' %}
+                                    Đang xử lý
+                                {% elif diem.trang_thai == 'DaXuLy' %}
+                     
+                                    Hoàn tất
+                                {% else %}
+                                    {{ trang_thai_hien_thi }}
+            
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+      
+                    <div class="highlight-note mb-4">
+                        <b>Người tạo:</b> {{ nguoi_tao_hien_thi }}<br>
+                        <b>Ngày báo cáo:</b> {{ diem.ngay_bao_cao|date:"d/m/Y H:i" }}<br>
+                        <b>Cập nhật gần nhất:</b> {{ diem.ngay_cap_nhat|date:"d/m/Y H:i" }}
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            
+                            <div class="info-box">
+                                <div class="info-label">Khu vực</div>
+                                <div class="info-value">{{ diem.quan_huyen }}</div>
+                            </div>
+  
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-box">
+                        
+                                <div class="info-label">Tọa độ</div>
+                                <div class="info-value">{{ diem.vi_do }}, {{ diem.kinh_do }}</div>
+                            </div>
+                        
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <div class="info-label">Ẩn danh</div>
+            
+                                <div class="info-value">{% if diem.an_danh %}Có{% else %}Không{% endif %}</div>
+                            </div>
+                        </div>
+                    
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <div class="info-label">Người theo dõi</div>
+                               
+                                <div class="info-value">
+                                    <span id="soNguoiTheoDoi">{{ so_nguoi_theo_doi }}</span> người
+                                </div>
+                          
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="info-box">
+                    
+                                <div class="info-label">Mô tả chi tiết</div>
+                                <div class="info-value">
+                                    {{ diem.mo_ta_chi_tiet|default:"Chưa có mô tả chi tiết." }}
+                                </div>
+                            </div>
+                        </div>
+                
+                        <div class="col-12">
+                            <div class="info-box">
+                                <div class="info-label">Ghi chú từ cán bộ</div>
+                         
+                                <div class="info-value">
+                                    {{ diem.ghi_chu|default:"Chưa có ghi chú xử lý." }}
+                                </div>
+                            </div>
+                        </div>
+                
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2 mt-4">
+                        <button
+                            type="button"
+                    
+                            id="btnTheoDoi"
+                            class="btn {% if da_theo_doi %}btn-warning{% else %}btn-outline-warning{% endif %}"
+                            data-id="{{ diem.id }}"
+                          
+                            data-following="{% if da_theo_doi %}true{% else %}false{% endif %}"
+                        >
+                            {% if da_theo_doi %}Bỏ theo dõi{% else %}Theo dõi phản ánh{% endif %}
+                        </button>
+
+                        <a href="/ban-do/?focus_lat={{ diem.vi_do|stringformat:'f' }}&focus_lng={{ diem.kinh_do|stringformat:'f' }}" class="btn btn-outline-primary fw-bold">
+                            <i class="fa-solid fa-map-location-dot"></i> Xem vị trí này trên bản đồ
+                        </a>
+                    </div>
+
+                    <div id="theoDoiMessage" class="mt-3"></div>
+                </div>
+            </div>
+
+            <div class="col-12 col-xl-4">
+                <div class="meta-card p-4 h-100">
+                    <div class="section-title">Bản đồ vị trí</div>
+                    
+                    <div class="mini-map d-flex align-items-center justify-content-center" style="background-color: #e2e8f0; border: 2px dashed #94a3b8;">
+                        <div class="text-center p-3">
+                            <i class="fa-solid fa-map-location-dot fa-3x text-primary mb-2"></i>
+                            <h6 class="fw-bold">Bản đồ chi tiết</h6>
+                            <p class="small text-muted mb-0">Vui lòng bấm nút <b>"Xem vị trí này trên bản đồ"</b> ở bên trái để mở bản đồ tương tác với đầy đủ tính năng.</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 text-muted small">
+                        Vị trí phản ánh được liên kết trực tiếp với Bản đồ WebGIS.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="gallery-card p-4 mb-4">
+            <div class="section-title">Ảnh hiện trường</div>
+
+            {% if danh_sach_hinh %}
+                <div class="row g-3">
+     
+                    {% for hinh in danh_sach_hinh %}
+                        <div class="col-12 col-md-6 col-xl-4">
+                            <a href="{{ hinh.hinh_anh.url }}" target="_blank">
+                     
+                                <img src="{{ hinh.hinh_anh.url }}" alt="Ảnh hiện trường" class="gallery-img">
+                            </a>
+                        </div>
+                    {% endfor %}
+        
+                </div>
+            {% else %}
+                <div class="empty-box">Chưa có ảnh hiện trường.</div>
+            {% endif %}
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-12 col-xl-6">
+          
+                <div class="gallery-card p-4 h-100">
+                    <div class="section-title">Ảnh sau xử lý</div>
+
+                    {% if diem.hinh_anh_xong %}
+                        <div class="done-box">
+                   
+                            <img src="{{ diem.hinh_anh_xong.url }}" alt="Ảnh sau xử lý" class="done-img">
+                        </div>
+                    {% else %}
+                        <div class="empty-box">Hiện chưa có ảnh sau xử lý.</div>
+      
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="col-12 col-xl-6">
+                <div class="gallery-card p-4 h-100">
+                    <div class="section-title">Tổng quan nhanh</div>
+
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="info-box text-center">
+                       
+                                <div class="info-label">Ảnh hiện trường</div>
+                                <div class="fw-bold fs-4">{{ danh_sach_hinh|length }}</div>
+                            </div>
+                        
+                        </div>
+                        <div class="col-6">
+                            <div class="info-box text-center">
+                                <div class="info-label">Bình luận</div>
+           
+                                <div class="fw-bold fs-4">{{ danh_sach_binh_luan|length }}</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                      
+                            <div class="info-box text-center">
+                                <div class="info-label">Theo dõi</div>
+                                <div class="fw-bold fs-4" id="soNguoiTheoDoiTongQuan">{{ so_nguoi_theo_doi }}</div>
+                     
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="info-box text-center">
+              
+                                <div class="info-label">Trạng thái</div>
+                                <div class="fw-bold fs-6">{{ trang_thai_hien_thi }}</div>
+                            </div>
+                
+                        </div>
+                    </div>
+
+                    {% if la_chu_so_huu %}
+                        <div class="alert alert-info mt-3 mb-0">
+                     
+                            Đây là phản ánh do em tạo.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="comment-card p-4">
+            <div class="comment-card p-4">
+                <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2 mb-4">
+                    <div class="section-title mb-0">Bình luận liên quan</div>
+                    <div class="text-muted small">Người dùng có thể phản hồi trực tiếp ngay tại trang chi tiết.</div>
+                </div>
+
+                <div class="card border-0 shadow-sm mb-4" style="border-radius:16px;">
+                    <div class="card-body">
+                        <h5 class="fw-bold mb-3">Gửi bình luận mới</h5>
+
+                        <form method="POST" action="/gui-binh-luan/" enctype="multipart/form-data">
+                      
+                            {% csrf_token %}
+                            <input type="hidden" name="id_diem" value="{{ diem.id }}">
+                            <input type="hidden" name="redirect_to" value="/chi-tiet-phan-anh/{{ diem.id }}/">
+
+                          
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Nội dung bình luận</label>
+                                <textarea
+                            
+                                    name="noi_dung"
+                                    class="form-control"
+                                    rows="4"
+                    
+                                    placeholder="Nhập ý kiến, bổ sung thông tin hoặc phản hồi của em tại đây..."
+                                ></textarea>
+                            </div>
+
+           
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Ảnh minh chứng (không bắt buộc)</label>
+                                <input
+           
+                                    type="file"
+                                    name="hinh_anh_minh_chung"
+                                    class="form-control"
+   
+                                    accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                                >
+                                <div class="form-text">Chấp nhận JPG, JPEG, PNG, WEBP. Tối đa 5MB.</div>
+                            </div>
+
+                            <div class="d-flex flex-wrap gap-2">
+                                <button type="submit" class="btn btn-primary px-4">Gửi bình luận</button>
+                                <a href="/phan-anh-cua-toi/" class="btn btn-outline-secondary">Quay lại danh sách</a>
+                            </div>
+                        </form>
+       
+                    </div>
+                </div>
+
+                {% if danh_sach_binh_luan %}
+                    <div class="d-flex flex-column gap-3">
+                        {% for bl in danh_sach_binh_luan %}
+                            <div class="comment-item">
+                                <div class="d-flex justify-content-between flex-wrap gap-2 mb-2">
+                                  
+                                    <div class="comment-user">{{ bl.nguoi_dung.username }}</div>
+                                    <div class="comment-time">{{ bl.ngay_tao|date:"d/m/Y H:i" }}</div>
+                                </div>
+
+                       
+                                <div>{{ bl.noi_dung|default:"(Không có nội dung chữ)" }}</div>
+
+                                {% if bl.hinh_anh_minh_chung %}
+                                    <a href="{{ bl.hinh_anh_minh_chung.url }}" target="_blank">
+          
+                                        <img src="{{ bl.hinh_anh_minh_chung.url }}" alt="Ảnh minh chứng" class="comment-img">
+                                    </a>
+                           
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+ 
+                    <div class="empty-box">Chưa có bình luận nào cho phản ánh này.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const btnTheoDoi = document.getElementById('btnTheoDoi');
+    const soNguoiTheoDoi = document.getElementById('soNguoiTheoDoi');
+    const soNguoiTheoDoiTongQuan = document.getElementById('soNguoiTheoDoiTongQuan');
+    const theoDoiMessage = document.getElementById('theoDoiMessage');
+    if (btnTheoDoi) {
+        btnTheoDoi.addEventListener('click', async function () {
+            const id = this.dataset.id;
+
+            try {
+                const formData = new FormData();
+                formData.append('id', id);
+
+                const response = await fetch('/theo-doi-su-co/', 
+                {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+             
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    if (typeof data.so_nguoi_theo_doi !== 'undefined') {
+           
+                        soNguoiTheoDoi.textContent = data.so_nguoi_theo_doi;
+                        soNguoiTheoDoiTongQuan.textContent = data.so_nguoi_theo_doi;
+                    }
+
+                    if (data.da_theo_doi) {
+                 
+                        btnTheoDoi.textContent = 'Bỏ theo dõi';
+                        btnTheoDoi.classList.remove('btn-outline-warning');
+                        btnTheoDoi.classList.add('btn-warning');
+                        btnTheoDoi.dataset.following = 'true';
+                        theoDoiMessage.innerHTML = `
+                            <div class="alert alert-success mb-0">
+                                Em đã theo dõi phản ánh này.
+                            </div>
+                        `;
+                    } else {
+                        btnTheoDoi.textContent = 'Theo dõi phản ánh';
+                        btnTheoDoi.classList.remove('btn-warning');
+                        btnTheoDoi.classList.add('btn-outline-warning');
+                        btnTheoDoi.dataset.following = 'false';
+
+                        theoDoiMessage.innerHTML = `
+                            <div class="alert alert-secondary mb-0">
+                                Em đã bỏ theo dõi phản ánh này.
+                            </div>
+                        `;
+                    }
+                } else {
+                    theoDoiMessage.innerHTML = `
+                        <div class="alert alert-danger mb-0">
+                            ${data.message ||
+                            'Có lỗi xảy ra khi cập nhật theo dõi.'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                theoDoiMessage.innerHTML = `
+                    <div class="alert alert-danger mb-0">
+                        Không thể kết nối đến máy chủ.
+                    </div>
+                `;
+            }
+        });
+    }
+    </script>
+</body>
+</html>
